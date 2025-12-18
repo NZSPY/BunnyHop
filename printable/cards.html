@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BunnyHop Printable Cards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        @page {
+            size: letter;
+            margin: 0.5in;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+        
+        .print-instructions {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        @media print {
+            .print-instructions {
+                display: none;
+            }
+            body {
+                background: white;
+                padding: 0;
+            }
+        }
+        
+        .card-sheet {
+            display: grid;
+            grid-template-columns: repeat(3, 2.5in);
+            grid-template-rows: repeat(3, 3.5in);
+            gap: 0.125in;
+            margin-bottom: 0.25in;
+            page-break-after: always;
+        }
+        
+        .card {
+            width: 2.5in;
+            height: 3.5in;
+            border: 2px solid #333;
+            border-radius: 0.2in;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+        
+        .card-corner {
+            position: absolute;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .card-corner.top-left {
+            top: 10px;
+            left: 10px;
+        }
+        
+        .card-corner.bottom-right {
+            bottom: 10px;
+            right: 10px;
+            transform: rotate(180deg);
+        }
+        
+        .card-value {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .card-type {
+            font-size: 24px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .card-description {
+            font-size: 12px;
+            text-align: center;
+            padding: 0 15px;
+            margin-top: 10px;
+        }
+        
+        .bunny-icon {
+            font-size: 48px;
+            margin: 10px 0;
+        }
+        
+        /* Color variations */
+        .card.red {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-color: #c62828;
+        }
+        
+        .card.red .card-value,
+        .card.red .card-corner,
+        .card.red .card-type {
+            color: #c62828;
+        }
+        
+        .card.blue {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #1565c0;
+        }
+        
+        .card.blue .card-value,
+        .card.blue .card-corner,
+        .card.blue .card-type {
+            color: #1565c0;
+        }
+        
+        .card.green {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #2e7d32;
+        }
+        
+        .card.green .card-value,
+        .card.green .card-corner,
+        .card.green .card-type {
+            color: #2e7d32;
+        }
+        
+        .card.yellow {
+            background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+            border-color: #f57f17;
+        }
+        
+        .card.yellow .card-value,
+        .card.yellow .card-corner,
+        .card.yellow .card-type {
+            color: #f57f17;
+        }
+        
+        .card.action {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-color: #6a1b9a;
+        }
+        
+        .card.action .card-value,
+        .card.action .card-corner,
+        .card.action .card-type {
+            color: #6a1b9a;
+        }
+        
+        .card.special {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #e65100;
+        }
+        
+        .card.special .card-value,
+        .card.special .card-corner,
+        .card.special .card-type {
+            color: #e65100;
+        }
+        
+        .card.wild {
+            background: linear-gradient(135deg, #ff0000 0%, #00ff00 25%, #0000ff 50%, #ffff00 75%, #ff0000 100%);
+            border-color: #000;
+        }
+        
+        .card.wild .card-value,
+        .card.wild .card-corner,
+        .card.wild .card-type {
+            color: #000;
+            text-shadow: 0 0 3px white;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-instructions">
+        <h1>BunnyHop Card Game - Printable Cards</h1>
+        <h2>Printing Instructions:</h2>
+        <ol>
+            <li>Use File → Print or press Ctrl+P (Cmd+P on Mac)</li>
+            <li>Set margins to minimum (0.5 inch recommended)</li>
+            <li>Enable "Background graphics" in print settings</li>
+            <li>Print on cardstock for best results (110lb/200gsm)</li>
+            <li>Cut along the card borders</li>
+        </ol>
+        <p><strong>Total: 52 cards across 6 sheets</strong></p>
+    </div>
+
+    <!-- Sheet 1: Red Hop Cards 1-9 -->
+    <div class="card-sheet">
+        <div class="card red">
+            <div class="card-corner top-left">1</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">1</div>
+            <div class="card-corner bottom-right">1</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">2</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">2</div>
+            <div class="card-corner bottom-right">2</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">3</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">3</div>
+            <div class="card-corner bottom-right">3</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">4</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">4</div>
+            <div class="card-corner bottom-right">4</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">5</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">5</div>
+            <div class="card-corner bottom-right">5</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">6</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">6</div>
+            <div class="card-corner bottom-right">6</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">7</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">7</div>
+            <div class="card-corner bottom-right">7</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">8</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">8</div>
+            <div class="card-corner bottom-right">8</div>
+        </div>
+        <div class="card red">
+            <div class="card-corner top-left">9</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">9</div>
+            <div class="card-corner bottom-right">9</div>
+        </div>
+    </div>
+
+    <!-- Sheet 2: Red 10 + Blue 1-8 -->
+    <div class="card-sheet">
+        <div class="card red">
+            <div class="card-corner top-left">10</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">10</div>
+            <div class="card-corner bottom-right">10</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">1</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">1</div>
+            <div class="card-corner bottom-right">1</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">2</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">2</div>
+            <div class="card-corner bottom-right">2</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">3</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">3</div>
+            <div class="card-corner bottom-right">3</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">4</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">4</div>
+            <div class="card-corner bottom-right">4</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">5</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">5</div>
+            <div class="card-corner bottom-right">5</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">6</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">6</div>
+            <div class="card-corner bottom-right">6</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">7</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">7</div>
+            <div class="card-corner bottom-right">7</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">8</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">8</div>
+            <div class="card-corner bottom-right">8</div>
+        </div>
+    </div>
+
+    <!-- Sheet 3: Blue 9-10 + Green 1-7 -->
+    <div class="card-sheet">
+        <div class="card blue">
+            <div class="card-corner top-left">9</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">9</div>
+            <div class="card-corner bottom-right">9</div>
+        </div>
+        <div class="card blue">
+            <div class="card-corner top-left">10</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">10</div>
+            <div class="card-corner bottom-right">10</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">1</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">1</div>
+            <div class="card-corner bottom-right">1</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">2</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">2</div>
+            <div class="card-corner bottom-right">2</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">3</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">3</div>
+            <div class="card-corner bottom-right">3</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">4</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">4</div>
+            <div class="card-corner bottom-right">4</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">5</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">5</div>
+            <div class="card-corner bottom-right">5</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">6</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">6</div>
+            <div class="card-corner bottom-right">6</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">7</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">7</div>
+            <div class="card-corner bottom-right">7</div>
+        </div>
+    </div>
+
+    <!-- Sheet 4: Green 8-10 + Yellow 1-6 -->
+    <div class="card-sheet">
+        <div class="card green">
+            <div class="card-corner top-left">8</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">8</div>
+            <div class="card-corner bottom-right">8</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">9</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">9</div>
+            <div class="card-corner bottom-right">9</div>
+        </div>
+        <div class="card green">
+            <div class="card-corner top-left">10</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">10</div>
+            <div class="card-corner bottom-right">10</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">1</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">1</div>
+            <div class="card-corner bottom-right">1</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">2</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">2</div>
+            <div class="card-corner bottom-right">2</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">3</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">3</div>
+            <div class="card-corner bottom-right">3</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">4</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">4</div>
+            <div class="card-corner bottom-right">4</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">5</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">5</div>
+            <div class="card-corner bottom-right">5</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">6</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">6</div>
+            <div class="card-corner bottom-right">6</div>
+        </div>
+    </div>
+
+    <!-- Sheet 5: Yellow 7-10 + Action Cards -->
+    <div class="card-sheet">
+        <div class="card yellow">
+            <div class="card-corner top-left">7</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">7</div>
+            <div class="card-corner bottom-right">7</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">8</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">8</div>
+            <div class="card-corner bottom-right">8</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">9</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">9</div>
+            <div class="card-corner bottom-right">9</div>
+        </div>
+        <div class="card yellow">
+            <div class="card-corner top-left">10</div>
+            <div class="bunny-icon">🐰</div>
+            <div class="card-value">10</div>
+            <div class="card-corner bottom-right">10</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Skip</div>
+            <div class="bunny-icon">⏭️</div>
+            <div class="card-description">Next player loses their turn</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Skip</div>
+            <div class="bunny-icon">⏭️</div>
+            <div class="card-description">Next player loses their turn</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Reverse</div>
+            <div class="bunny-icon">🔄</div>
+            <div class="card-description">Reverse turn order</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Reverse</div>
+            <div class="bunny-icon">🔄</div>
+            <div class="card-description">Reverse turn order</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Block</div>
+            <div class="bunny-icon">🚫</div>
+            <div class="card-description">Block opponent's next Hop</div>
+        </div>
+    </div>
+
+    <!-- Sheet 6: Action Cards + Special Cards -->
+    <div class="card-sheet">
+        <div class="card action">
+            <div class="card-type">Block</div>
+            <div class="bunny-icon">🚫</div>
+            <div class="card-description">Block opponent's next Hop</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Double</div>
+            <div class="bunny-icon">✖️2</div>
+            <div class="card-description">Next Hop counts double</div>
+        </div>
+        <div class="card action">
+            <div class="card-type">Double</div>
+            <div class="bunny-icon">✖️2</div>
+            <div class="card-description">Next Hop counts double</div>
+        </div>
+        <div class="card wild">
+            <div class="card-type">Wild Hop</div>
+            <div class="bunny-icon">🌈🐰</div>
+            <div class="card-description">Any color, any value 1-10</div>
+        </div>
+        <div class="card wild">
+            <div class="card-type">Wild Action</div>
+            <div class="bunny-icon">🌈⚡</div>
+            <div class="card-description">Acts as any action card</div>
+        </div>
+        <div class="card special">
+            <div class="card-type">Draw Two</div>
+            <div class="bunny-icon">+2</div>
+            <div class="card-description">Next player draws 2 and skips turn</div>
+        </div>
+        <div class="card special">
+            <div class="card-type">Finish Line</div>
+            <div class="bunny-icon">🏁</div>
+            <div class="card-description">Win instantly if at position 15+</div>
+        </div>
+        <!-- Filler cards for sheet alignment -->
+        <div class="card" style="border: 2px dashed #ccc; background: #f9f9f9;">
+            <div class="card-description">BunnyHop Card Game<br/>www.github.com/NZSPY/BunnyHop</div>
+        </div>
+        <div class="card" style="border: 2px dashed #ccc; background: #f9f9f9;">
+            <div class="card-description">Print 1 set per game<br/>52 cards total</div>
+        </div>
+    </div>
+
+</body>
+</html>
