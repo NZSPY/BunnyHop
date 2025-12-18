@@ -21,6 +21,8 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
+		// TODO: For production, restrict to specific origins
+		// Example: return r.Header.Get("Origin") == "https://yourdomain.com"
 		return true // Allow all origins for development
 	},
 }
@@ -120,8 +122,17 @@ func (c *Client) handleMessage(message []byte) {
 }
 
 func (c *Client) handleJoinGame(msg Message) {
-	gameID := msg.Data["gameId"].(string)
-	playerName := msg.Data["playerName"].(string)
+	gameID, ok := msg.Data["gameId"].(string)
+	if !ok {
+		c.sendError("Invalid gameId")
+		return
+	}
+	
+	playerName, ok := msg.Data["playerName"].(string)
+	if !ok {
+		c.sendError("Invalid playerName")
+		return
+	}
 	
 	c.gameID = gameID
 	c.playerID = playerName + "-" + time.Now().Format("150405")
@@ -165,7 +176,12 @@ func (c *Client) handleStartGame(msg Message) {
 }
 
 func (c *Client) handlePlayCard(msg Message) {
-	cardID := msg.Data["cardId"].(string)
+	cardID, ok := msg.Data["cardId"].(string)
+	if !ok {
+		c.sendError("Invalid cardId")
+		return
+	}
+	
 	targetPlayerID := ""
 	if target, ok := msg.Data["targetPlayerId"].(string); ok {
 		targetPlayerID = target
@@ -226,7 +242,11 @@ func (c *Client) broadcastGameState() {
 		Data:   g.GetState(),
 	}
 	
-	data, _ := json.Marshal(msg)
+	data, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("error marshaling game state: %v", err)
+		return
+	}
 	c.hub.BroadcastToGame(c.gameID, data)
 }
 
@@ -238,6 +258,17 @@ func (c *Client) sendJSON(msg Message) {
 	}
 	
 	c.send <- data
+}
+
+func (c *Client) sendError(errMsg string) {
+	log.Printf("client error: %s", errMsg)
+	response := Message{
+		Type: "error",
+		Data: map[string]interface{}{
+			"error": errMsg,
+		},
+	}
+	c.sendJSON(response)
 }
 
 func ServeWs(hub *Hub, gm *game.Manager, w http.ResponseWriter, r *http.Request) {

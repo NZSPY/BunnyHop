@@ -17,6 +17,7 @@ const (
 type Game struct {
 	ID            string            `json:"id"`
 	Players       map[string]*Player `json:"players"`
+	PlayerOrder   []string          `json:"-"` // Maintains consistent player order
 	DrawPile      []Card            `json:"-"`
 	DiscardPile   []Card            `json:"discardPile"`
 	CurrentPlayer int               `json:"currentPlayer"`
@@ -34,6 +35,7 @@ func NewGame(id string, maxPlayers int) *Game {
 	game := &Game{
 		ID:            id,
 		Players:       make(map[string]*Player),
+		PlayerOrder:   make([]string, 0),
 		DrawPile:      deck[1:], // Save first card for discard pile
 		DiscardPile:   []Card{deck[0]},
 		CurrentPlayer: 0,
@@ -59,6 +61,7 @@ func (g *Game) AddPlayer(player *Player) error {
 	}
 	
 	g.Players[player.ID] = player
+	g.PlayerOrder = append(g.PlayerOrder, player.ID)
 	
 	// Deal initial cards (5 per player)
 	for i := 0; i < 5; i++ {
@@ -247,11 +250,7 @@ func (g *Game) getCurrentPlayer() *Player {
 }
 
 func (g *Game) getPlayerIDs() []string {
-	ids := make([]string, 0, len(g.Players))
-	for id := range g.Players {
-		ids = append(ids, id)
-	}
-	return ids
+	return g.PlayerOrder
 }
 
 func (g *Game) IsPlayerTurn(playerID string) bool {
