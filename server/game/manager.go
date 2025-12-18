@@ -3,7 +3,8 @@ package game
 import (
 	"fmt"
 	"sync"
-	"time"
+
+	"github.com/google/uuid"
 )
 
 type Manager struct {
@@ -21,11 +22,12 @@ func (m *Manager) CreateGame(creatorName string, maxPlayers int) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	
-	gameID := fmt.Sprintf("game-%d", time.Now().UnixNano())
+	gameID := "game-" + uuid.New().String()
 	game := NewGame(gameID, maxPlayers)
 	
 	// Add creator as first player
-	creator := NewPlayer(fmt.Sprintf("player-%d", time.Now().UnixNano()), creatorName)
+	playerID := "player-" + uuid.New().String()
+	creator := NewPlayer(playerID, creatorName)
 	game.AddPlayer(creator)
 	
 	m.games[gameID] = game

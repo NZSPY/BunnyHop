@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NZSPY/BunnyHop/server/game"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -135,7 +136,7 @@ func (c *Client) handleJoinGame(msg Message) {
 	}
 	
 	c.gameID = gameID
-	c.playerID = playerName + "-" + time.Now().Format("150405")
+	c.playerID = "player-" + uuid.New().String()
 	
 	err := c.gm.JoinGame(gameID, c.playerID, playerName)
 	
