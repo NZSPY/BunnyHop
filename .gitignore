@@ -1,0 +1,10 @@
+.DS_Store
+/.vscode/*
+/localtest/*
+/Client/Atari/bin/*.asm
+Client/Atari/bin/*.o 
+Client/Atari/bin/debug.*
+Client/Atari/bin/*.bas
+Client/Atari/bin/*.lst
+Client/Atari/bin/*.lbl
+Client/Atari/bin/*.lst
