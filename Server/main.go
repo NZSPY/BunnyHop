@@ -95,15 +95,16 @@ func main() {
 
 	// Set environment flags
 	UpdateLobby = os.Getenv("GO_PROD") == "1"
+	/*
+		if UpdateLobby {
+			gin.SetMode(gin.ReleaseMode)
+			LOBBY_ENDPOINT_UPSERT = "http://lobby.fujinet.online/server"
+		} else {
+			LOBBY_ENDPOINT_UPSERT = "http://qalobby.fujinet.online/server"
+		}
 
-	if UpdateLobby {
-		gin.SetMode(gin.ReleaseMode)
-		LOBBY_ENDPOINT_UPSERT = "http://lobby.fujinet.online/server"
-	} else {
-		LOBBY_ENDPOINT_UPSERT = "http://qalobby.fujinet.online/server"
-	}
-
-	log.Print("This instance will update the lobby at " + LOBBY_ENDPOINT_UPSERT)
+		log.Print("This instance will update the lobby at " + LOBBY_ENDPOINT_UPSERT)
+	*/
 
 	// Determine port for HTTP service.
 	port := os.Getenv("PORT")
