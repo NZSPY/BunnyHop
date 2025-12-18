@@ -1,0 +1,391 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.screen {
+    display: none;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.screen.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+}
+
+h1 {
+    text-align: center;
+    color: #667eea;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+h2 {
+    text-align: center;
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+h3 {
+    color: #764ba2;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex: 1;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Game Screen Styles */
+.game-container {
+    max-width: 1400px;
+    width: 100%;
+}
+
+.game-header {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#gameInfo {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.game-board {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.players-area {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.player-box {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 15px;
+    border-radius: 10px;
+    border: 3px solid transparent;
+}
+
+.player-box.active {
+    border-color: #667eea;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+}
+
+.player-box.current-player {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.player-position {
+    font-size: 14px;
+    color: #555;
+}
+
+.player-cards {
+    font-size: 12px;
+    color: #777;
+    margin-top: 5px;
+}
+
+.center-area {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 30px 0;
+}
+
+.discard-pile, .draw-pile {
+    text-align: center;
+}
+
+.card-slot, .card-back {
+    width: 120px;
+    height: 160px;
+    border: 3px solid #333;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    background: white;
+    margin-top: 10px;
+}
+
+.card-back {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+}
+
+.player-hand {
+    margin-top: 30px;
+}
+
+.hand-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.card {
+    width: 100px;
+    height: 140px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    font-weight: bold;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card.playable {
+    border-color: #28a745;
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+.card-value {
+    font-size: 36px;
+    margin: 10px 0;
+}
+
+.card-icon {
+    font-size: 24px;
+}
+
+.card-type {
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Card Colors */
+.card.red {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+    border-color: #c62828;
+}
+
+.card.blue {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    border-color: #1565c0;
+}
+
+.card.green {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border-color: #2e7d32;
+}
+
+.card.yellow {
+    background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+    color: #f57f17;
+    border-color: #f57f17;
+}
+
+.card.action {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    color: #6a1b9a;
+    border-color: #6a1b9a;
+}
+
+.card.special {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #e65100;
+    border-color: #e65100;
+}
+
+.card.wild {
+    background: linear-gradient(135deg, #ff0000 0%, #00ff00 25%, #0000ff 50%, #ffff00 75%, #ff0000 100%);
+    color: #000;
+    border-color: #000;
+}
+
+.game-log {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#log {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.log-entry {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.games-list {
+    margin-top: 20px;
+}
+
+#gamesListContent {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.game-item {
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.game-item-info {
+    flex: 1;
+}
+
+.game-item-action button {
+    padding: 8px 16px;
+}
+
+#playersList {
+    margin: 20px 0;
+}
+
+.player-item {
+    background: #f8f9fa;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .hand-cards {
+        gap: 5px;
+    }
+    
+    .card {
+        width: 80px;
+        height: 112px;
+    }
+    
+    .card-value {
+        font-size: 28px;
+    }
+}

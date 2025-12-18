@@ -1,0 +1,36 @@
+# Go build artifacts
+server/bunnyhop-server
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go test files
+*.test
+*.out
+
+# Atari build artifacts
+client-atari/*.xex
+client-atari/*.atr
+client-atari/*.o
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+
+# Node modules (if added later)
+node_modules/
+
+# Environment files
+.env
+.env.local
