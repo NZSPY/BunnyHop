@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunny Hop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f8ff;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .table-list {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table-item:last-child {
+            border-bottom: none;
+        }
+
+        .table-name {
+            font-weight: bold;
+        }
+
+        .table-status {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Bunny Hop!</h1>
+    <div class="table-list" id="table-list">
+        <p>Loading available tables...</p>
+    </div>
+
+    <script>
+        async function fetchTables() {
+            try {
+                const response = await fetch('http://192.168.88.28:8080/tables');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tables');
+                }
+
+                const tables = await response.json();
+                const tableList = document.getElementById('table-list');
+                tableList.innerHTML = '';
+
+                tables.forEach(table => {
+                    const tableItem = document.createElement('div');
+                    tableItem.className = 'table-item';
+
+                    const tableName = document.createElement('div');
+                    tableName.className = 'table-name';
+                    tableName.textContent = table.n;
+
+                    const tableStatus = document.createElement('div');
+                    tableStatus.className = 'table-status';
+                    tableStatus.textContent = `Players: ${table.p}/${table.m}, Status: ${getStatusText(table.s)}`;
+
+                    tableItem.appendChild(tableName);
+                    tableItem.appendChild(tableStatus);
+                    tableList.appendChild(tableItem);
+                });
+            } catch (error) {
+                console.error('Error fetching tables:', error);
+                document.getElementById('table-list').textContent = 'Failed to load tables.';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 0: return 'Empty';
+                case 1: return 'Full';
+                case 2: return 'Waiting';
+                case 3: return 'Playing';
+                case 4: return 'Round Over';
+                case 5: return 'Game Over';
+                default: return 'Unknown';
+            }
+        }
+
+        fetchTables();
+    </script>
+</body>
+</html>

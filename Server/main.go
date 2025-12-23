@@ -75,8 +75,6 @@ type Player struct {
 	Name           string
 	Human          bool
 	Status         Status
-	WhiteTokens    int
-	BlackTokens    int
 	Score          int
 	Hand           Deck
 	NumCards       int       // Number of cards in hand
@@ -126,8 +124,8 @@ func main() {
 			EndedLast:      -1,
 			RoundOver:      false,
 			Gameover:       false}
-		setUpTable(i)  // Initialize each table with a new deck and shuffle it
-		updateLobby(i) // Update the lobby with the initial state of each table
+		setUpTable(i) // Initialize each table with a new deck and shuffle it
+		// updateLobby(i) // Update the lobby with the initial state of each table
 	}
 
 	router := gin.Default()
@@ -240,8 +238,6 @@ func joinTable(c *gin.Context) {
 		Name:           newplayerName,
 		Human:          true,
 		Status:         STATUS_WAITING,
-		WhiteTokens:    0,
-		BlackTokens:    0,
 		Score:          0,
 		RoundScore:     0,
 		Hand:           Deck{},
@@ -344,15 +340,13 @@ func StartNewGame(c *gin.Context) {
 			}
 			// Create a new AI player
 			newAIPlayer := Player{
-				Name:        fmt.Sprintf("AI-%d", i+1),
-				Human:       false,
-				Status:      STATUS_WAITING,
-				WhiteTokens: 0,
-				BlackTokens: 0,
-				Score:       0,
-				RoundScore:  0,
-				Hand:        Deck{},
-				Playorder:   gameStates[tableIndex].Table.CurPlayers, // Set the play order based on the current number of players
+				Name:       fmt.Sprintf("AI-%d", i+1),
+				Human:      false,
+				Status:     STATUS_WAITING,
+				Score:      0,
+				RoundScore: 0,
+				Hand:       Deck{},
+				Playorder:  gameStates[tableIndex].Table.CurPlayers, // Set the play order based on the current number of players
 			}
 			gameStates[tableIndex].Players = append(gameStates[tableIndex].Players, newAIPlayer)
 			gameStates[tableIndex].Table.CurPlayers++
@@ -425,8 +419,6 @@ func getGameState(c *gin.Context) {
 		Name        string `json:"n"`
 		Status      Status `json:"s"`
 		NumCards    int    `json:"nc"`
-		WhiteTokens int    `json:"wt"`
-		BlackTokens int    `json:"bt"`
 		HandSummary string `json:"ph"`
 		ValidMove   string `json:"pvm"`
 	}, len(gameStates[tableIndex].Players))
@@ -436,16 +428,12 @@ func getGameState(c *gin.Context) {
 			Name        string `json:"n"`
 			Status      Status `json:"s"`
 			NumCards    int    `json:"nc"`
-			WhiteTokens int    `json:"wt"`
-			BlackTokens int    `json:"bt"`
 			HandSummary string `json:"ph"`
 			ValidMove   string `json:"pvm"`
 		}{
 			Name:        player.Name,
 			Status:      player.Status,
 			NumCards:    player.NumCards,
-			WhiteTokens: player.WhiteTokens,
-			BlackTokens: player.BlackTokens,
 			HandSummary: makeHandSummary(tableIndex, i),
 			ValidMove:   player.ValidMove,
 		}
@@ -828,43 +816,16 @@ func EndofRoundScore(tableIndex int) {
 		{
 			SortHand(tableIndex, i)             // Sort the player's hand before calculating the score
 			RemoveDuplicateCards(tableIndex, i) // Remove any duplicate cards from the player's hand before calculating the score
-			WhiteTokens := 0
-			BlackTokens := 0
+
 			// Calculate the score based on the cards remaining in the player's hand
 			for _, card := range gameStates[tableIndex].Players[i].Hand {
 				if card.Cardvalue > 0 && card.Cardvalue < 7 {
-					WhiteTokens = WhiteTokens + card.Cardvalue
+
 				}
 				if card.Cardvalue == 7 {
-					BlackTokens++ // Llama is worth 1 black token (10 points)
+
 				}
 			}
-
-			RoundScore := WhiteTokens + (BlackTokens * 10)
-
-			if RoundScore == 0 { // Player has no cards left in hand so score is 0 for this round and can return a token if they have one
-				switch {
-				case gameStates[tableIndex].Players[i].BlackTokens > 0:
-					gameStates[tableIndex].Players[i].BlackTokens = gameStates[tableIndex].Players[i].BlackTokens - 1
-					gameStates[tableIndex].Players[i].RoundScore = 0
-				case gameStates[tableIndex].Players[i].WhiteTokens > 0:
-					gameStates[tableIndex].Players[i].WhiteTokens = gameStates[tableIndex].Players[i].WhiteTokens - 1
-					gameStates[tableIndex].Players[i].RoundScore = 0
-				default:
-					gameStates[tableIndex].Players[i].RoundScore = 0
-				}
-			} else {
-				gameStates[tableIndex].Players[i].RoundScore = RoundScore
-				gameStates[tableIndex].Players[i].WhiteTokens = gameStates[tableIndex].Players[i].WhiteTokens + WhiteTokens
-				gameStates[tableIndex].Players[i].BlackTokens = gameStates[tableIndex].Players[i].BlackTokens + BlackTokens
-
-			}
-			if gameStates[tableIndex].Players[i].WhiteTokens > 9 {
-				gameStates[tableIndex].Players[i].BlackTokens = gameStates[tableIndex].Players[i].BlackTokens + int(gameStates[tableIndex].Players[i].WhiteTokens/10)
-				gameStates[tableIndex].Players[i].WhiteTokens = gameStates[tableIndex].Players[i].WhiteTokens % 10
-			}
-
-			gameStates[tableIndex].Players[i].Score = gameStates[tableIndex].Players[i].WhiteTokens + (gameStates[tableIndex].Players[i].BlackTokens * 10) // Update the player's total score
 
 		}
 	}
