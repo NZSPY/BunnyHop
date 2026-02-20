@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunny Hop Web Client</title>
+    <link rel="stylesheet" href="styles.css">
+   
+</head>
+<body>
+    
+    <table>
+        <tr>
+            <td><font size="+2"><center><B>Welcome to Bunny Hop!</B></center></font></td>
+        </tr>
+    </table>
+   
+ 
+<table>
+    <thead>
+        <tr>
+            <td colspan="4">Player name: <input type="text" id="playerName" placeholder="Enter your name"> then select a table to join from the list below</td>
+        </tr>
+    </thead>
+        <tr>
+            <!-- Headers will be populated here by JavaScript -->
+        </tr>
+  
+    <tbody id="dataTableBody">
+        <!-- Data rows will be populated here by JavaScript -->
+    </tbody>
+    <tfoot>
+        <!-- Footer will be populated here by JavaScript -->    
+    </tfoot>
+</table>
+
+
+<P></P>
+
+<input type="hidden" id="tableID">
+
+
+<div id="errorMessage" style="color: red;"></div>
+
+
+
+</body>
+</html>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tableBody = document.getElementById('dataTableBody');
+        const apiUrl = 'http://192.168.88.200:8080/tables';
+    
+        async function fetchDataAndPopulateTable() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+    
+                if (data.length > 0) {
+                    // Populate table headers with custom labels
+                    const headerRow = tableBody.previousElementSibling.querySelector('tr');
+                    const headerLabels = {
+                        'n': 'Table Name',
+                        'p': 'Current Players',
+                        'm': 'Max Players',
+                        's': 'Status'
+                    };
+                    Object.keys(data[0]).slice(1).forEach(key => {
+                        const th = document.createElement('th');
+                        th.textContent = headerLabels[key] || key;
+                        headerRow.appendChild(th);
+                    });
+    
+                    // Define status codes mapping
+                    const statusMap = {
+                        '0': 'Empty',
+                        '1': 'Full',
+                        '2': 'Waiting',
+                        '3': 'Playing',
+                        '4': 'Round Over',
+                        '5': 'Game Over'
+                    };
+
+                    // Populate table rows with click functionality
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.style.cursor = 'pointer';
+                        row.addEventListener('click', () => {
+                            document.getElementById('tableID').value = item.t;
+                            document.getElementById('tableID').scrollIntoView({ behavior: 'smooth' });
+                            updateJoinButton(item.n);
+                        });
+                        
+                        // Create cells with status conversion
+                        Object.entries(item).slice(1).forEach(([key, value]) => {
+                            const td = document.createElement('td');
+                            td.textContent = key === 's' ? statusMap[value] || value : value;
+                            row.appendChild(td);
+                        });
+                        
+                        row.addEventListener('mouseover', () => {
+                            row.style.backgroundColor = '#f0f0f0';
+                        });
+                        row.addEventListener('mouseout', () => {
+                            row.style.backgroundColor = '';
+                        });
+                        
+                        tableBody.appendChild(row);
+                    });
+
+                    // Add join button to footer
+                    const tfoot = document.querySelector('tfoot');
+                    const footerRow = document.createElement('tr');
+                    const footerCell = document.createElement('th');
+                    footerCell.colSpan = 4;
+                    footerCell.innerHTML = `
+                        <div id="joinInfo" style="display: none">
+                            Join as <span id="playerNameDisplay"></span> to table: <span id="selectedTable"></span>
+                            <button onclick="openTableAndRefresh()">Join Table</button>
+                        </div>`;
+                    footerRow.appendChild(footerCell);
+                    tfoot.appendChild(footerRow);
+                }
+            } catch (error) {
+                console.error('Error fetching or processing data:', error);
+            }
+        }
+
+        function updateJoinButton(tableName) {
+            const playerName = document.getElementById('playerName').value;
+            const joinInfo = document.getElementById('joinInfo');
+            document.getElementById('playerNameDisplay').textContent = playerName;
+            document.getElementById('selectedTable').textContent = tableName;
+            joinInfo.style.display = playerName ? 'block' : 'none';
+        }
+        
+        fetchDataAndPopulateTable();
+    });
+
+function openTableAndRefresh() {
+    var tableId = document.getElementById('tableID').value;
+    var playerName = document.getElementById('playerName').value;
+    fetch('http://192.168.88.200:8080/join?table=' + tableId + '&player=' + playerName)
+        .then(async response => {
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
+            }
+            return response.json();
+        })
+        .then(() => {
+          
+            // Open page Play_Game.html with tableId and playerName
+            window.location.href = 'Play_Game.html?table=' + tableId + '&player=' + playerName;
+        })
+        .catch(error => {
+            console.error('Error making move:', error);
+            document.getElementById('errorMessage').textContent = 'Error: ' + error.message;
+        });
+}
+</script>
+    

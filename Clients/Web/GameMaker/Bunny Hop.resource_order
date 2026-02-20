@@ -1,0 +1,15 @@
+{
+  "FolderOrderSettings":[
+    {"name":"Scripts","order":3,"path":"folders/Scripts.yy",},
+    {"name":"Sprites","order":4,"path":"folders/Sprites.yy",},
+  ],
+  "ResourceOrderSettings":[
+    {"name":"Obj_Resolution_Controler","order":1,"path":"objects/Obj_Resolution_Controler/Obj_Resolution_Controler.yy",},
+    {"name":"Object2","order":5,"path":"objects/Object2/Object2.yy",},
+    {"name":"Object3","order":6,"path":"objects/Object3/Object3.yy",},
+    {"name":"scale_canvas","order":1,"path":"scripts/scale_canvas/scale_canvas.yy",},
+    {"name":"spr_title","order":2,"path":"sprites/spr_title/spr_title.yy",},
+    {"name":"sprite0","order":1,"path":"sprites/sprite0/sprite0.yy",},
+    {"name":"Sprite4","order":4,"path":"sprites/Sprite4/Sprite4.yy",},
+  ],
+}
