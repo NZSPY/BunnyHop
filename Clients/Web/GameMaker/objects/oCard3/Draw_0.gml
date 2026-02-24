@@ -1,0 +1,12 @@
+draw_self()
+
+
+draw_set_halign(fa_center)
+draw_set_font(fCard_Text)
+draw_set_colour(c_black)
+
+draw_text(x-12, y + 38, "Corn Cobs")
+
+draw_set_font(fCard_Number)
+draw_text(x-25, y-50, "3")
+draw_text(x+26, y+26, "3")

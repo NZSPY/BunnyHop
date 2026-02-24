@@ -6,8 +6,8 @@
   "name":"Object2",
   "overriddenProperties":[],
   "parent":{
-    "name":"Bunny Hop",
-    "path":"Bunny Hop.yyp",
+    "name":"Objects",
+    "path":"folders/Objects.yy",
   },
   "parentObjectId":null,
   "persistent":false,
@@ -28,8 +28,8 @@
   "resourceVersion":"2.0",
   "solid":false,
   "spriteId":{
-    "name":"spr_title",
-    "path":"sprites/spr_title/spr_title.yy",
+    "name":"sTitle",
+    "path":"sprites/sTitle/sTitle.yy",
   },
   "spriteMaskId":null,
   "visible":true,
