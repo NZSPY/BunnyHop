@@ -1,6 +1,6 @@
 
-
-if (ds_map_find_value(async_load, "id") == request_handle) 
+// Get list of avalaible game tables and thier status
+if (async_load[? "id"] == http_request_table_list)
 {
 	
 	if(ds_map_find_value(async_load,"status") == 0 )
@@ -8,9 +8,8 @@ if (ds_map_find_value(async_load, "id") == request_handle)
 		var json =ds_map_find_value(async_load, "result");
 		var data = json_parse(json);
 
-// load data into table arrays
+// load game table information into table arrays
  var record_num=0;
- 
  
 repeat(array_length(data))
 
@@ -25,34 +24,38 @@ repeat(array_length(data))
 	   switch (table_status_array[record_num])
 	   {
 	   case 0:
-	   table_status_array[record_num]="Round Over"
+	   table_status_array[record_num]="Empty"
+	   selectable[record_num]=true
 	   break;
 	   
 	   case 1:
 	   table_status_array[record_num]="Full"
+	   selectable[record_num]=false
 	   break;
 	   
 	   case 2:
 	   table_status_array[record_num]="Waiting"
+	   selectable[record_num]=true
 	   break;
 	   
 	   case 3:
 	   table_status_array[record_num]="Playing"
+	   selectable[record_num]=false
 	   break;
 	   
 	   case 4:
 	   table_status_array[record_num]="Round Over"
+	   selectable[record_num]=false
 	   break;
 	   
 	   case 5:
 	   table_status_array[record_num]="Game Over"
+	   selectable[record_num]=false
 	   break;
 	   }
 	   
 	   record_num++;
 }
-
-
 		
 	}
 	else
@@ -60,4 +63,16 @@ repeat(array_length(data))
 	show_message("Fail");
 		
 	}
+}
+
+// Join a table 
+if (async_load[? "id"] == http_request_join_table)
+{
+    var _status = async_load[? "status"];
+    var _r_str = (_status == 0) ? async_load[? "result"] : "null";
+
+		show_message(_r_str);
+		
+		room_goto(Game_Screen);
+		
 }

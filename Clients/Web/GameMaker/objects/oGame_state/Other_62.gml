@@ -1,0 +1,39 @@
+if (async_load[? "id"] == fetch_game_state)
+{
+if(ds_map_find_value(async_load,"status") == 0 )
+	{
+		var json =ds_map_find_value(async_load, "result");
+		var data = json_parse(json);
+		state_message = data.lmp;
+
+		draw_deck = data.dd;
+		discard_pile = data.dp;
+		table_status= data.ts;
+		
+			
+// load game state information into game state arrays
+ var record_num=0;
+ 
+repeat(array_length(data.pls))
+{
+game_state_player_name[record_num] = data.pls[record_num].n;
+game_state_player_status[record_num] = data.pls[record_num].s;
+game_state_player_number_of_cards[record_num] = data.pls[record_num].nc;
+game_state_player_hand_summary[record_num] = data.pls[record_num].ph;
+game_state_player_valid_moves[record_num] = data.pls[record_num].pvm;
+
+if game_state_player_name[record_num]=global.player_name then isPlayer = record_num;
+
+
+record_num++;
+}
+		
+	}
+	else
+	{
+	show_message("Fail");
+		
+	}
+		
+		
+}

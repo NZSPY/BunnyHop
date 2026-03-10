@@ -251,30 +251,29 @@ func joinTable(c *gin.Context) {
 	// Add the new player to the game state if a valid condtions are met
 	switch {
 	case !ok:
-		c.JSON(http.StatusNotFound, "ERR(1)You need to specify a valid table and player name to join") // Notify the player to specify a table and player name
+		c.JSON(http.StatusOK, "ERR(1)You need to specify a valid table and player name to join") // Notify the player to specify a table and player name
 		return
 	case newplayerName == "":
-		c.JSON(http.StatusNotFound, "ERR(2)You need to supply a player name to join a table")
+		c.JSON(http.StatusOK, "ERR(2)You need to supply a player name to join a table")
 		return
 	case checkPlayerName(tableIndex, newplayerName):
-		c.JSON(http.StatusNotFound, "ERR(3) Sorry: "+newplayerName+" someone is already at table with that name ,please try a different table and or name") // Notify the player name is already taken
+		c.JSON(http.StatusOK, "ERR(3) Sorry: "+newplayerName+" someone is already at table with that name ,please try a different table and or name") // Notify the player name is already taken
 		return
 	case gameStates[tableIndex].Table.Status == 3 || gameStates[tableIndex].Table.Status == 4 || gameStates[tableIndex].Table.Status == 5:
-		c.JSON(http.StatusNotFound, "ERR(4) Sorry: "+newplayerName+" table "+tables[tableIndex].Table+" has a game in progress, please try a different table") // Notify the player that the table is busy
+		c.JSON(http.StatusOK, "ERR(4) Sorry: "+newplayerName+" table "+tables[tableIndex].Table+" has a game in progress, please try a different table") // Notify the player that the table is busy
 		return
 	case gameStates[tableIndex].Table.Status == 1:
 		gameStates[tableIndex].Table.Status = 1
-		c.JSON(http.StatusNotFound, "ERR(5) Sorry: "+newplayerName+" table "+tables[tableIndex].Table+" is full, please try a different table") // Notify the player that the table is full
+		c.JSON(http.StatusOK, "ERR(5) Sorry: "+newplayerName+" table "+tables[tableIndex].Table+" is full, please try a different table") // Notify the player that the table is full
 		return
 
 	default:
-		c.JSON(http.StatusOK, newplayerName+" joined table "+tables[tableIndex].Table)                         // Notify the player that they have successfully joined the table
-		fmt.Println("Success !!.. Player ", newplayerName, " Joined table ", string(tables[tableIndex].Table)) // Log the player joining the table
-		gameStates[tableIndex].Table.Status = 2                                                                // set status to waiting
+		c.JSON(http.StatusOK, newplayerName+" joined table "+tables[tableIndex].Table) // Notify the player that they have successfully joined the table
+		gameStates[tableIndex].Table.Status = 2                                        // set status to waiting
 		gameStates[tableIndex].Players = append(gameStates[tableIndex].Players, newplayer)
 		gameStates[tableIndex].Players[len(gameStates[tableIndex].Players)-1].Playorder = gameStates[tableIndex].Table.CurPlayers // Set the play order for the new player
 		gameStates[tableIndex].Table.CurPlayers++                                                                                 // Increment the current players count
-		if (gameStates[tableIndex].Table.Table == "cave" || gameStates[tableIndex].Table.Table == "river") && gameStates[tableIndex].Table.CurPlayers > 1 {
+		if (gameStates[tableIndex].Table.Table == "cave" || gameStates[tableIndex].Table.Table == "garden") && gameStates[tableIndex].Table.CurPlayers > 1 {
 			gameStates[tableIndex].Table.maxBots = 0 // No bots allowed in cave or river if more than 2 or more human players
 		}
 		if gameStates[tableIndex].Table.CurPlayers >= gameStates[tableIndex].Table.MaxPlayers {
@@ -282,10 +281,12 @@ func joinTable(c *gin.Context) {
 			c.Params = []gin.Param{{Key: "sup", Value: "1"}}
 			StartNewGame(c) // Automatically start a new game if the table is full
 		}
-		tables[tableIndex].CurPlayers = gameStates[tableIndex].Table.CurPlayers // update the quick table view players count
-		tables[tableIndex].Status = gameStates[tableIndex].Table.Status         // update the quick table view status
-		gameStates[tableIndex].startTime = time.Now()                           // Reset the waiting timer for the game state
-		updateLobby(tableIndex)                                                 // Update the lobby with the new table state
+		tables[tableIndex].CurPlayers = gameStates[tableIndex].Table.CurPlayers                                // update the quick table view players count
+		tables[tableIndex].Status = gameStates[tableIndex].Table.Status                                        // update the quick table view status
+		gameStates[tableIndex].startTime = time.Now()                                                          // Reset the waiting timer for the game state
+		fmt.Println("Success !!.. Player ", newplayerName, " Joined table ", string(tables[tableIndex].Table)) // Log the player joining the table
+		//updateLobby(tableIndex)                                                 // Update the lobby with the new table state
+
 	}
 }
 
