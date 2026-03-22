@@ -45,7 +45,6 @@
     {"id":{"name":"oCardCat","path":"objects/oCardCat/oCardCat.yy",},},
     {"id":{"name":"oCardDog","path":"objects/oCardDog/oCardDog.yy",},},
     {"id":{"name":"oGame_state","path":"objects/oGame_state/oGame_state.yy",},},
-    {"id":{"name":"oName_Select","path":"objects/oName_Select/oName_Select.yy",},},
     {"id":{"name":"oTable_load","path":"objects/oTable_load/oTable_load.yy",},},
     {"id":{"name":"Game_Screen","path":"rooms/Game_Screen/Game_Screen.yy",},},
     {"id":{"name":"Title_Screen","path":"rooms/Title_Screen/Title_Screen.yy",},},

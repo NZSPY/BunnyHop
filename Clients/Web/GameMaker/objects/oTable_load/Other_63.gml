@@ -6,6 +6,7 @@ if (_id == msg)
         if (ds_map_find_value(async_load, "result") != "")
         {
             global.player_name = ds_map_find_value(async_load, "result");
+			http_request_table_list =http_get(TABLE_LIST_URL);
         }
     }
 }

@@ -71,7 +71,7 @@ if (async_load[? "id"] == http_request_join_table)
     var _status = async_load[? "status"];
     var _r_str = (_status == 0) ? async_load[? "result"] : "null";
 
-		show_message(_r_str);
+		// show_message(_r_str);
 		
 		room_goto(Game_Screen);
 		

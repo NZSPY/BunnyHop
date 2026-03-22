@@ -1,5 +1,3 @@
-
-
 if (mouse_check_button_released(mb_left))
 { 
 if (point_in_rectangle(mouse_x, mouse_y,115,155,290,180))

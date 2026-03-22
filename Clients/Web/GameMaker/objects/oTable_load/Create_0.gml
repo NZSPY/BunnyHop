@@ -20,3 +20,4 @@ rectangle_width=520;
 rectangle_height=400;
 
 selectable = array_create(7);
+

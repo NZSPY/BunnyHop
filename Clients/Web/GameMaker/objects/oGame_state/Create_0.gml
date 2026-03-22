@@ -1,9 +1,11 @@
 http_request_game_state_URL = BASE_URL +"/state?table="+global.game_table_ID+"&player="+global.player_name;
+http_request_game_start_URL = BASE_URL +"/start?table="+global.game_table_ID;
 
 state_message = "" ;
 draw_deck = "";
 discard_pile = "";
 table_status= "";
+cat_status="B"; // cat is in the basket 
 game_state_player_name = array_create(7);
 game_state_player_status = array_create(7);
 game_state_player_number_of_cards = array_create(7);
