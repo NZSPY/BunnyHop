@@ -60,7 +60,8 @@ repeat(array_length(data))
 	}
 	else
 	{
-	show_message("Fail");
+	show_message("Lost conection to server");
+	game_end();
 		
 	}
 }

@@ -4,8 +4,8 @@
 /// @param {int}    current width   The current width of the game canvas
 /// @param {int}    current height  The current height of the game canvas
 /// @param {bool}   center          Set whether to center the game window on the canvas or not
-function scale_canvas(argument0, argument1, argument2, argument3, argument4) {
-
+function scale_canvas(argument0, argument1, argument2, argument3, argument4) 
+{
 	var _bw = argument0;
 	var _bh = argument1;
 	var _cw = argument2;
@@ -25,10 +25,7 @@ function scale_canvas(argument0, argument1, argument2, argument3, argument4) {
 	    {
 	    window_center();
 	    }
-
 	view_wport[0] = min(window_get_width(), _bw);
 	view_hport[0] = min(window_get_height(), _bh)
 	surface_resize(application_surface, view_wport[0], view_hport[0]);
-
-
 }

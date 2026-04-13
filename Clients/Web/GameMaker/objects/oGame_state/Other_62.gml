@@ -12,7 +12,7 @@ if(ds_map_find_value(async_load,"status") == 0 )
 		
 			
 // load game state information into game state arrays
- var record_num=0;
+var record_num=0;
  
 repeat(array_length(data.pls))
 {
@@ -22,16 +22,17 @@ game_state_player_number_of_cards[record_num] = data.pls[record_num].nc;
 game_state_player_hand_summary[record_num] = data.pls[record_num].ph;
 game_state_player_valid_moves[record_num] = data.pls[record_num].pvm;
 
-if game_state_player_name[record_num]=global.player_name then isPlayer = record_num;
-
+if game_state_player_name[record_num]==global.player_name then isPlayer = record_num;
 
 record_num++;
+
 }
 		
 	}
 	else
 	{
-	show_message("Fail");
+	show_message("Lost conection to server");
+	game_end();
 		
 	}
 		

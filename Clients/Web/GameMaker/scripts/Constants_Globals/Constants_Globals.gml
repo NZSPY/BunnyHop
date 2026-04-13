@@ -11,6 +11,9 @@
 #macro CATSPOT_MAINPLAYERY 770
 #macro CARD_1X 15
 #macro CARD_MAINPLAYERY 770
+#macro FOLDED_HORIZONAL 30
+#macro FOLDED_MAINPLAYERX 55
+#macro FOLDED_MAINPLAYERY 775
 
 
 
@@ -23,17 +26,14 @@ global.player_name = "<Click to enter Name>";
 global.game_table_ID ="";
 global.name_set = false;
 
-global.catspot_player[1] = 194;
-global.catspot_player[2] = 304;
-global.catspot_player[3] = 414;
-global.catspot_player[4] = 524;
-global.catspot_player[5] = 634;
+global.catspoty_player[0] = 194;
+global.catspoty_player[1] = 194;
+global.catspoty_player[2] = 304;
+global.catspoty_player[3] = 414;
+global.catspoty_player[4] = 524;
+global.catspoty_player[5] = 634;
 
-global.cardy_player[1] = 212;
-global.cardy_player[2] =  322;
-global.cardy_player[3] =  432;
-global.cardy_player[4] =  542;
-global.cardy_player[5] =  652;
+
 
 
 

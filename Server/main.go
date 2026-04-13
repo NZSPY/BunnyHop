@@ -612,7 +612,7 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 			validMoves = validMoves + "F" // Player can fold
 		}
 	}
-
+	// validMoves = "F" // for debug
 	return validMoves
 }
 

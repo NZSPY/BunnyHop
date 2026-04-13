@@ -21,3 +21,5 @@ rectangle_height=400;
 
 selectable = array_create(7);
 
+size = "small"
+

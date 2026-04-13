@@ -37,7 +37,7 @@ draw_set_halign(fa_center);
 draw_text(rectangle_x+scd, cry+15, table_status_array[record_num]);
 
 // check if player has clicked into the table rectangle 
-if (mouse_check_button_released(mb_left) && global.name_set = true && selectable[record_num]=true)
+if (mouse_check_button_released(mb_left) && global.name_set == true && selectable[record_num]=true)
 { 
 if (point_in_rectangle(mouse_x, mouse_y,rectangle_x+5,cry,rectangle_x+rectangle_width-5,cry+45))
 {
@@ -52,7 +52,7 @@ if (point_in_rectangle(mouse_x, mouse_y,rectangle_x+5,cry,rectangle_x+rectangle_
 
 
 // increase to the next table row of data 
-if colour= 16777215 then colour = 12632256 else colour = 16777215;
+if colour== 16777215 then colour = 12632256 else colour = 16777215;
 record_num++;
 cry=cry+50;
 
