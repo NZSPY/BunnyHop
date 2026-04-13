@@ -175,19 +175,21 @@ func viewGameState(c *gin.Context) {
 
 }
 
-// NewDeck creates a new Llama 56-card deck.
+// NewDeck creates a new bunny hop  73 -card deck.
 func NewDeck() []Card {
-	deck := make([]Card, 56)
+	deck := make([]Card, 73)
 
-	cardNames := []string{"One", "Two", "Three", "Four", "Five", "Six", "Llama"}
+	cardNames := []string{"Dog", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Bunny"}
 
 	currentCard := 0
-	for value := 1; value <= 7; value++ {
+	for value := 1; value <= 9; value++ {
 		for i := 0; i < 8; i++ {
-			deck[currentCard] = Card{Cardvalue: value, Cardname: cardNames[value-1]}
+			deck[currentCard] = Card{Cardvalue: value, Cardname: cardNames[value]}
 			currentCard++
 		}
 	}
+	// Add the in the 1 "Dog" card with a value of 0
+	deck[72] = Card{Cardvalue: 0, Cardname: "Dog"}
 	return deck
 }
 
@@ -206,8 +208,8 @@ func shuffleDeck(deck []Card, tableIndex int) {
 		j := rand.Intn(i + 1)
 		deck[i], deck[j] = deck[j], deck[i]
 	}
-	gameStates[tableIndex].Discard = gameStates[tableIndex].Maindeck[55] // Set the discard to the last card in the deck
-	gameStates[tableIndex].NumCards = 55
+	gameStates[tableIndex].Discard = gameStates[tableIndex].Maindeck[72] // Set the discard to the last card in the deck (no discard pile at the start of the game fix that latter)
+	gameStates[tableIndex].NumCards = 72                                 // Set the number of cards in the deck to 72 (since one card is on the discard pile)
 }
 
 // find the table index from the query parameter
@@ -373,7 +375,7 @@ func dealCards(tableIndex int) {
 	for i := 0; i < gameStates[tableIndex].Table.CurPlayers; i++ {
 		player := &gameStates[tableIndex].Players[i]
 
-		for j := 0; j < 6; j++ {
+		for j := 0; j < 7; j++ {
 			player.Hand = append(player.Hand, gameStates[tableIndex].Maindeck[gameStates[tableIndex].NumCards]) // draw the last card from the deck
 			gameStates[tableIndex].NumCards--                                                                   // Decrement the number of cards in the deck
 			player.NumCards++                                                                                   // Increment the number of cards in the player's hand
@@ -577,7 +579,17 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 	}
 
 	if gameStates[tableIndex].Players[playerIndex].Status == STATUS_PLAYING {
-		// Check if any card in hand matches or is higher than discard pile
+		// Check if any card in hand matches or is 1 higher or 1 lower than discard pile
+		for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
+			prevValue := gameStates[tableIndex].Discard.Cardvalue - 1
+			if prevValue < 1 {
+				prevValue = 9
+			}
+			if card.Cardvalue == prevValue {
+				validMoves = validMoves + strconv.Itoa(prevValue) // Player can play the previous card in the sequence
+				break
+			}
+		}
 		for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
 			if card.Cardvalue == gameStates[tableIndex].Discard.Cardvalue {
 				validMoves = strconv.Itoa(gameStates[tableIndex].Discard.Cardvalue) // Player can play a matching card
@@ -586,11 +598,11 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 		}
 		for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
 			nextValue := gameStates[tableIndex].Discard.Cardvalue + 1
-			if nextValue > 7 {
+			if nextValue > 9 {
 				nextValue = 1
 			}
 			if card.Cardvalue == nextValue {
-				validMoves = validMoves + strconv.Itoa(nextValue) // Player can play a matching card
+				validMoves = validMoves + strconv.Itoa(nextValue) // Player can play the next card in the sequence
 				break
 			}
 		}
@@ -681,21 +693,36 @@ func doVaildMoveURL(c *gin.Context) {
 func doVaildMove(tableIndex int, playerIndex int, move string) {
 
 	nextValue := gameStates[tableIndex].Discard.Cardvalue + 1
-	if nextValue > 7 {
+	if nextValue > 9 {
 		nextValue = 1
 	}
 
+	prevValue := gameStates[tableIndex].Discard.Cardvalue - 1
+	if prevValue < 1 {
+		prevValue = 9
+	}
+	cardNames := []string{"Dog", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Bunny"}
 	gameStates[tableIndex].startTime = time.Now() // Reset the waiting timer
 	switch move {
-	case strconv.Itoa(gameStates[tableIndex].Discard.Cardvalue): // Play card onto the discard pile
+
+	case strconv.Itoa(gameStates[tableIndex].Discard.Cardvalue): // Play a matching card onto the discard pile
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + gameStates[tableIndex].Discard.Cardname
+		fmt.Println("Play a matching card onto the discard pile", gameStates[tableIndex].Discard.Cardname)
 		removeCardFromHand(tableIndex, playerIndex, gameStates[tableIndex].Discard) // Remove the played card from the player's hand
-	case strconv.Itoa(nextValue): // Play card onto the discard pile
-		cardNames := []string{"One", "Two", "Three", "Four", "Five", "Six", "Llama"}
-		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + cardNames[nextValue-1]
-		gameStates[tableIndex].Discard = Card{Cardvalue: nextValue, Cardname: cardNames[nextValue-1]}
-		removeCardFromHand(tableIndex, playerIndex, Card{Cardvalue: nextValue, Cardname: cardNames[nextValue-1]}) // Remove the played card from the player's hand
-	case "D": // Draw
+
+	case strconv.Itoa(nextValue): // Play next card in sequence onto the discard pile
+		gameStates[tableIndex].Discard = Card{Cardvalue: nextValue, Cardname: cardNames[nextValue]} // Update the discard pile with the next card
+		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + gameStates[tableIndex].Discard.Cardname
+		fmt.Println("Play the next card onto the discard pile", gameStates[tableIndex].Discard.Cardname)
+		removeCardFromHand(tableIndex, playerIndex, gameStates[tableIndex].Discard) // Remove the played card from the player's hand
+
+	case strconv.Itoa(prevValue): // Play previous card in sequence onto the discard pile
+		gameStates[tableIndex].Discard = Card{Cardvalue: prevValue, Cardname: cardNames[prevValue]} // Update the discard pile with the previous card
+		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + gameStates[tableIndex].Discard.Cardname
+		fmt.Println("Play the previous card onto the discard pile", gameStates[tableIndex].Discard.Cardname)
+		removeCardFromHand(tableIndex, playerIndex, gameStates[tableIndex].Discard) // Remove the played card from the player's hand
+
+	case "D": // Draw a card from the deck
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " drew a card from the deck"
 		addCardtohand(tableIndex, playerIndex) // Add a card to the player's hand
 	case "F": // Fold
