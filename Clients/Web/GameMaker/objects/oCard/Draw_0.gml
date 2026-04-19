@@ -49,10 +49,15 @@ else if selected
 {
 	draw_sprite_ext(sCard_Deck,number,x,y,0.2,0.2,0,c_red,1);
 }
+else if bunnyed
+{
+	draw_sprite_ext(sCard_Deck,number,x,y,0.2,0.2,0,c_yellow,1);
+}
 else 
 {
 	draw_sprite_ext(sCard_Deck,number,x,y,0.2,0.2,0,c_white,1);
 }
+
 
 draw_card_text(number, text, size);
 

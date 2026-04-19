@@ -17,7 +17,7 @@ import (
 
 type GameState struct {
 	Table          GameTable
-	NumCards       int
+	DeckPointer    int // Pointer to the current position in the deck (used for drawing cards) note deck starts at index 0 and pointer starts at 73 and decrements as cards are drawn
 	Discard        Card
 	Players        Players
 	Maindeck       Deck
@@ -26,6 +26,7 @@ type GameState struct {
 	RoundOver      bool   // Indicates if the round is over
 	Gameover       bool   // Indicates if the game is over
 	startTime      time.Time
+	RoundNumber    int // The current round number to keep track of how many rounds have been played in the current game (game is 4 rounds long)
 }
 
 var gameStates = make([]GameState, 7)
@@ -58,8 +59,8 @@ const (
 	STATUS_PLAYING         Status = 1
 	STATUS_FOLDED          Status = 2
 	STATUS_WON             Status = 3 // Player has won the round
-	STATUS_ROUND_VIEWED    Status = 4 // Player has the results of the round
-	STATUS_GAMEOVER_VIEWED Status = 5 // Player has the results of the end of game
+	STATUS_ROUND_VIEWED    Status = 4 // Player has viewed the results of the round
+	STATUS_GAMEOVER_VIEWED Status = 5 // Player has viewed the end of game results
 )
 
 // Deck represents a collection of cards.
@@ -83,6 +84,8 @@ type Player struct {
 	RoundScore     int       // Score for the current round
 	LastPolledTime time.Time // The time when the player last called the get state function
 	Handsumary     string    // store the hand summary form for sending via JSON to 8 bit computers the
+	HasCat         bool      // Indicates if the player has a cat marker in their hand (used for end of round scoring and Bunny blocking)
+	IsWinner       bool      // Indicates if the player has won the round
 }
 
 // Players represents a the players at a table
@@ -116,14 +119,15 @@ func main() {
 	for i := 0; i < len(gameStates); i++ {
 		gameStates[i] = GameState{Table: tables[i],
 			Maindeck:       Deck{},
-			NumCards:       0,
+			DeckPointer:    72,
 			Discard:        Card{},
 			Players:        Players{},
 			LastMovePlayed: "Waiting for players to join",
 			startTime:      time.Now(),
 			EndedLast:      -1,
 			RoundOver:      false,
-			Gameover:       false}
+			Gameover:       false,
+			RoundNumber:    0}
 		setUpTable(i) // Initialize each table with a new deck and shuffle it
 		// updateLobby(i) // Update the lobby with the initial state of each table
 	}
@@ -148,12 +152,10 @@ func getTables(c *gin.Context) {
 	// if any games are over and all players have viewed the results then the game state is reset for a new game
 	for i := 0; i < len(gameStates); i++ {
 		if gameStates[i].Table.Status != 0 {
-			idleTableClose(i) // Close any tables with no human players
+			idlePlayerRemoval(i) // Remove any idle players from the tables
+			idleTableClose(i)    // Close any tables with no human players
 		}
-		idlePlayerRemoval(i) // Remove any idle players from the tables
-		if allViewedGameOver(i) && gameStates[i].Gameover {
-			resetGame(i) // Reset the game state for a new game
-		}
+
 	}
 
 	c.JSON(http.StatusOK, tables)
@@ -197,19 +199,17 @@ func setUpTable(tableIndex int) {
 	if tableIndex < 0 || tableIndex >= len(gameStates) {
 		return // Invalid table index
 	}
-	gameStates[tableIndex].Maindeck = NewDeck()              // Create a new deck for the table
-	shuffleDeck(gameStates[tableIndex].Maindeck, tableIndex) // Shuffle the deck and set the discard pile
+	gameStates[tableIndex].Maindeck = NewDeck() // Create a new deck for the table
+	shuffleDeck(gameStates[tableIndex].Maindeck, tableIndex)
 }
 
 // shuffleDeck shuffles the deck using the Fisher-Yates algorithm.
-// And deal out the first card to the discard pile.
 func shuffleDeck(deck []Card, tableIndex int) {
 	for i := len(deck) - 1; i > 0; i-- {
 		j := rand.Intn(i + 1)
 		deck[i], deck[j] = deck[j], deck[i]
 	}
-	gameStates[tableIndex].Discard = gameStates[tableIndex].Maindeck[72] // Set the discard to the last card in the deck (no discard pile at the start of the game fix that latter)
-	gameStates[tableIndex].NumCards = 72                                 // Set the number of cards in the deck to 72 (since one card is on the discard pile)
+	gameStates[tableIndex].DeckPointer = 72 // Set the deck pointer to the last card in the deck (index 72) after shuffling
 }
 
 // find the table index from the query parameter
@@ -244,9 +244,11 @@ func joinTable(c *gin.Context) {
 		RoundScore:     0,
 		Hand:           Deck{},
 		NumCards:       0,          // Initially, the player has no cards in hand
+		HasCat:         false,      // Initially, the player doesn't have a cat marker in their hand
 		ValidMove:      "",         // Initially, the player doesn't have any valid moves
 		Playorder:      0,          // Set the play order to the current number of players
 		LastPolledTime: time.Now(), // Set the last polled time to now
+		IsWinner:       false,      // Initially, the player is not a winner
 	}
 	fmt.Println("A player is trying to join table:", string(tables[tableIndex].Table), " with name:", newplayerName) // Log the player trying to join the table
 
@@ -254,19 +256,24 @@ func joinTable(c *gin.Context) {
 	switch {
 	case !ok:
 		c.JSON(http.StatusOK, "ERR(1)You need to specify a valid table and player name to join") // Notify the player to specify a table and player name
+		fmt.Println("Fail !! No table or name supplyed:")
 		return
 	case newplayerName == "":
 		c.JSON(http.StatusOK, "ERR(2)You need to supply a player name to join a table")
+		fmt.Println("Fail !! No Name supplyed:")
 		return
 	case checkPlayerName(tableIndex, newplayerName):
 		c.JSON(http.StatusOK, "ERR(3) Sorry: "+newplayerName+" someone is already at table with that name ,please try a different table and or name") // Notify the player name is already taken
+		fmt.Println("Fail !! Player name is already taken:")
 		return
 	case gameStates[tableIndex].Table.Status == 3 || gameStates[tableIndex].Table.Status == 4 || gameStates[tableIndex].Table.Status == 5:
 		c.JSON(http.StatusOK, "ERR(4) Sorry: "+newplayerName+" table "+tables[tableIndex].Table+" has a game in progress, please try a different table") // Notify the player that the table is busy
+		fmt.Println("Fail !! Table is busy:")
 		return
 	case gameStates[tableIndex].Table.Status == 1:
 		gameStates[tableIndex].Table.Status = 1
 		c.JSON(http.StatusOK, "ERR(5) Sorry: "+newplayerName+" table "+tables[tableIndex].Table+" is full, please try a different table") // Notify the player that the table is full
+		fmt.Println("Fail !! Table is full:")
 		return
 
 	default:
@@ -348,8 +355,10 @@ func StartNewGame(c *gin.Context) {
 				Status:     STATUS_WAITING,
 				Score:      0,
 				RoundScore: 0,
+				HasCat:     false,
 				Hand:       Deck{},
 				Playorder:  gameStates[tableIndex].Table.CurPlayers, // Set the play order based on the current number of players
+				IsWinner:   false,
 			}
 			gameStates[tableIndex].Players = append(gameStates[tableIndex].Players, newAIPlayer)
 			gameStates[tableIndex].Table.CurPlayers++
@@ -376,12 +385,13 @@ func dealCards(tableIndex int) {
 		player := &gameStates[tableIndex].Players[i]
 
 		for j := 0; j < 7; j++ {
-			player.Hand = append(player.Hand, gameStates[tableIndex].Maindeck[gameStates[tableIndex].NumCards]) // draw the last card from the deck
-			gameStates[tableIndex].NumCards--                                                                   // Decrement the number of cards in the deck
-			player.NumCards++                                                                                   // Increment the number of cards in the player's hand
+			player.Hand = append(player.Hand, gameStates[tableIndex].Maindeck[gameStates[tableIndex].DeckPointer]) // draw the last card from the deck
+			gameStates[tableIndex].DeckPointer--                                                                   // Decrement the deck pointer
+			player.NumCards++                                                                                      // Increment the number of cards in the player's hand
 		}
-		// sortCards(tableIndex, i) // Sort the player's hand after dealing
+		SortHand(tableIndex, i) // Sort the player's hand after dealing
 	}
+	gameStates[tableIndex].Discard.Cardvalue = 11 // Set the discard pile to a non card value to indicate it's empty at the start of the game
 
 }
 
@@ -424,6 +434,9 @@ func getGameState(c *gin.Context) {
 		NumCards    int    `json:"nc"`
 		HandSummary string `json:"ph"`
 		ValidMove   string `json:"pvm"`
+		Score       int    `json:"sc"`
+		HasCat      bool   `json:"hc"`
+		IsWinner    bool   `json:"win"`
 	}, len(gameStates[tableIndex].Players))
 
 	for i, player := range gameStates[tableIndex].Players {
@@ -433,12 +446,18 @@ func getGameState(c *gin.Context) {
 			NumCards    int    `json:"nc"`
 			HandSummary string `json:"ph"`
 			ValidMove   string `json:"pvm"`
+			Score       int    `json:"sc"`
+			HasCat      bool   `json:"hc"`
+			IsWinner    bool   `json:"win"`
 		}{
 			Name:        player.Name,
 			Status:      player.Status,
 			NumCards:    player.NumCards,
 			HandSummary: makeHandSummary(tableIndex, i),
 			ValidMove:   player.ValidMove,
+			Score:       player.Score,
+			HasCat:      player.HasCat,
+			IsWinner:    player.IsWinner,
 		}
 	}
 
@@ -451,7 +470,7 @@ func getGameState(c *gin.Context) {
 		Players        interface{} `json:"pls"`
 	}{
 
-		DrawDeck:       gameStates[tableIndex].NumCards,
+		DrawDeck:       gameStates[tableIndex].DeckPointer + 1,
 		DiscardPile:    gameStates[tableIndex].Discard.Cardvalue,
 		TablesStatus:   gameStates[tableIndex].Table.Status,
 		LastMovePlayed: gameStates[tableIndex].LastMovePlayed,
@@ -479,13 +498,13 @@ func getGameState(c *gin.Context) {
 		}
 	}
 
-	// If the table is playing and the waiting timer has exceeded 60 seconds, Auto fold the player who has not made a move in 60 seconds
-	if elapsed >= 60*time.Second && gameStates[tableIndex].Table.Status == 3 {
+	// If the table is playing and the waiting timer has exceeded 120 seconds, Auto fold the player who has not made a move in 120 seconds
+	if elapsed >= 120*time.Second && gameStates[tableIndex].Table.Status == 3 {
 		gameStates[tableIndex].startTime = time.Now() // Reset the waiting timer
 		for i := 0; i < len(gameStates[tableIndex].Players); i++ {
 			if gameStates[tableIndex].Players[i].Status == STATUS_PLAYING {
-				doVaildMove(tableIndex, i, "F") // If the player has not made a move in 60 seconds, fold them
-				fmt.Println("Waiting timer exceeded 60 seconds, folding", gameStates[tableIndex].Players[i].Name)
+				doVaildMove(tableIndex, i, "F") // If the player has not made a move in 120 seconds, fold them
+				fmt.Println("Waiting timer exceeded 120 seconds, folding", gameStates[tableIndex].Players[i].Name)
 				break // Exit the loop after folding the first player who is still playing
 			}
 		}
@@ -493,27 +512,19 @@ func getGameState(c *gin.Context) {
 
 	// Check if the round has ended and handle the end of the round logic
 	if checkRoundEndCondtions(tableIndex) {
-		fmt.Println("Round ended for table 1", tables[tableIndex].Table)
+		fmt.Println("Round ended for table ", tables[tableIndex].Table)
 		EndofRoundScore(tableIndex) // Call the end of round scoring function
 	}
 
 	// check if all players have viewed the results and reset the game state if so
-	if allViewedResults(tableIndex) && gameStates[tableIndex].RoundOver {
+	if (allViewedResults(tableIndex) && gameStates[tableIndex].RoundOver) || (allViewedFinalResults(tableIndex) && gameStates[tableIndex].Gameover) {
 		if gameStates[tableIndex].Gameover {
-			SetEndofGameStatus(tableIndex)
-			fmt.Println("All players have viewed the results, Sorting for gameover", tables[tableIndex].Table)
-			gameStates[tableIndex].Table.Status = 5 // Set the table status to game over
-			tables[tableIndex].Status = gameStates[tableIndex].Table.Status
+			fmt.Println("All players have viewed the final results, resetting game for table", tables[tableIndex].Table)
+			resetGame(tableIndex) // Reset the game state for a new game
 		} else {
-			fmt.Println("All players have viewed the results, resetting game for table", tables[tableIndex].Table)
+			fmt.Println("All players have viewed the results, dealing a new round to ", tables[tableIndex].Table)
 			resetTable(tableIndex) // Reset the game state for a new round
 		}
-	}
-
-	// check if all players have viewed the results and reset the game state if so
-	if allViewedGameOver(tableIndex) && gameStates[tableIndex].Gameover {
-		fmt.Println("All players have viewed the final results, resetting game for table", tables[tableIndex].Table)
-		resetGame(tableIndex) // Reset the game state for a new game
 	}
 
 	idlePlayerChange(tableIndex)
@@ -574,10 +585,7 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 		return "R" // Player can view results
 	}
 
-	if gameStates[tableIndex].Table.Status == 5 { // If the Game is over, players can only view game over re
-		return "G" // Player can view results
-	}
-
+	noMoves := true
 	if gameStates[tableIndex].Players[playerIndex].Status == STATUS_PLAYING {
 		// Check if any card in hand matches or is 1 higher or 1 lower than discard pile
 		for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
@@ -587,12 +595,14 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 			}
 			if card.Cardvalue == prevValue {
 				validMoves = validMoves + strconv.Itoa(prevValue) // Player can play the previous card in the sequence
+				noMoves = false
 				break
 			}
 		}
 		for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
 			if card.Cardvalue == gameStates[tableIndex].Discard.Cardvalue {
-				validMoves = strconv.Itoa(gameStates[tableIndex].Discard.Cardvalue) // Player can play a matching card
+				validMoves = validMoves + strconv.Itoa(gameStates[tableIndex].Discard.Cardvalue) // Player can play a matching card
+				noMoves = false
 				break
 			}
 		}
@@ -603,9 +613,40 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 			}
 			if card.Cardvalue == nextValue {
 				validMoves = validMoves + strconv.Itoa(nextValue) // Player can play the next card in the sequence
+				noMoves = false
 				break
 			}
 		}
+		// If the player has only one card left and it's the dog they can play it on to the discard pile to win the round
+		if gameStates[tableIndex].Players[playerIndex].NumCards == 1 {
+			for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
+				if card.Cardvalue == 0 {
+					validMoves = validMoves + "0" // Player can play the dog card to win the round
+					noMoves = false
+					break
+				}
+			}
+		}
+
+		bunnyCanHop := false
+		if noMoves {
+			for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
+				if card.Cardvalue == 9 {
+					bunnyCanHop = true // player can play a buny card to hop to another players hand if they have no other valid moves and they other player has not folded or has a Cat marker
+					break
+				}
+			}
+		}
+
+		if bunnyCanHop {
+			letters := []string{"B", "H", "N", "J", "M", "K"} // flags for which player the bunny can hop to
+			for i := range gameStates[tableIndex].Players {
+				if i != playerIndex && i < len(letters) && gameStates[tableIndex].Players[i].Status != STATUS_FOLDED && !gameStates[tableIndex].Players[i].HasCat {
+					validMoves += letters[i] // set the bunny hopping flag for the player that the bunny can hop to (if they have not folded and do not already have a cat marker)
+				}
+			}
+		}
+
 		lastone := false
 		foldedCount := 0
 
@@ -617,14 +658,24 @@ func setValidmoves(tableIndex int, playerIndex int) string {
 		if foldedCount == len(gameStates[tableIndex].Players)-1 { // If all but one player has folded, the last player can not draw any new cards
 			lastone = true
 		}
-		if gameStates[tableIndex].NumCards > 0 && !lastone {
-			validMoves = validMoves + "D" // Player can draw
+		if gameStates[tableIndex].DeckPointer > -1 && noMoves && !lastone {
+			validMoves = validMoves + "D" // Player can draw only if they have no other valid moves or if they are not the last player left (to prevent infinite drawing when only one player is left and they have no valid moves)
 		}
 		if gameStates[tableIndex].Players[playerIndex].Status == STATUS_PLAYING {
 			validMoves = validMoves + "F" // Player can fold
 		}
+
+		if gameStates[tableIndex].Discard.Cardvalue == 11 { // If the discard pile is empty, players can play any card in their hand except the dog
+			validMoves = "" // reset valid moves
+			for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
+				if card.Cardvalue != 0 {
+					validMoves = validMoves + strconv.Itoa(card.Cardvalue)
+				}
+			}
+		}
+
 	}
-	// validMoves = "F" // for debug
+	//validMoves = validMoves + "D" // for debug
 	return validMoves
 }
 
@@ -640,7 +691,7 @@ func doVaildMoveURL(c *gin.Context) {
 
 	// Find the player and check their status
 	playerName := c.Query("player")
-	move := c.Query("VM") // Valid Move (e.g., "P", "N", "D", "F","R","G")
+	move := c.Query("VM") // Valid Move (e.g., "P", "N", "D", "F","R")
 	var playerFound bool
 	var validMoves string
 	playerIndex := -1
@@ -653,7 +704,7 @@ func doVaildMoveURL(c *gin.Context) {
 			validMoves = player.ValidMove
 			if player.Status != STATUS_PLAYING {
 
-				if validMoves == "R" || validMoves == "G" {
+				if validMoves == "R" {
 					// If the player is allowed to view results, let them proceed
 
 				} else {
@@ -692,6 +743,15 @@ func doVaildMoveURL(c *gin.Context) {
 // Perform the valid move for the player at the specified table
 func doVaildMove(tableIndex int, playerIndex int, move string) {
 
+	if move != "R" {
+		gameStates[tableIndex].Players[playerIndex].HasCat = false // Reset the cat marker at the start of the player's turn
+	}
+	cardNames := []string{"Dog", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Bunny"}
+	if gameStates[tableIndex].Discard.Cardvalue == 11 { // If the discard pile is empty, set discard to the value of the card played
+		if cardValue, err := strconv.Atoi(move); err == nil {
+			gameStates[tableIndex].Discard = Card{Cardvalue: cardValue, Cardname: cardNames[cardValue]}
+		}
+	}
 	nextValue := gameStates[tableIndex].Discard.Cardvalue + 1
 	if nextValue > 9 {
 		nextValue = 1
@@ -701,74 +761,160 @@ func doVaildMove(tableIndex int, playerIndex int, move string) {
 	if prevValue < 1 {
 		prevValue = 9
 	}
-	cardNames := []string{"Dog", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Bunny"}
+	drawmatch := false
+
 	gameStates[tableIndex].startTime = time.Now() // Reset the waiting timer
+
 	switch move {
 
 	case strconv.Itoa(gameStates[tableIndex].Discard.Cardvalue): // Play a matching card onto the discard pile
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + gameStates[tableIndex].Discard.Cardname
-		fmt.Println("Play a matching card onto the discard pile", gameStates[tableIndex].Discard.Cardname)
+		updatelog(tableIndex)
 		removeCardFromHand(tableIndex, playerIndex, gameStates[tableIndex].Discard) // Remove the played card from the player's hand
 
 	case strconv.Itoa(nextValue): // Play next card in sequence onto the discard pile
 		gameStates[tableIndex].Discard = Card{Cardvalue: nextValue, Cardname: cardNames[nextValue]} // Update the discard pile with the next card
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + gameStates[tableIndex].Discard.Cardname
-		fmt.Println("Play the next card onto the discard pile", gameStates[tableIndex].Discard.Cardname)
+		updatelog(tableIndex)
 		removeCardFromHand(tableIndex, playerIndex, gameStates[tableIndex].Discard) // Remove the played card from the player's hand
 
 	case strconv.Itoa(prevValue): // Play previous card in sequence onto the discard pile
 		gameStates[tableIndex].Discard = Card{Cardvalue: prevValue, Cardname: cardNames[prevValue]} // Update the discard pile with the previous card
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played a " + gameStates[tableIndex].Discard.Cardname
-		fmt.Println("Play the previous card onto the discard pile", gameStates[tableIndex].Discard.Cardname)
+		updatelog(tableIndex)
 		removeCardFromHand(tableIndex, playerIndex, gameStates[tableIndex].Discard) // Remove the played card from the player's hand
+	// bunny hopping moves
+	case "B": // Play a bunny card to hop to player 1's hand
+		bunnyhop(tableIndex, playerIndex, 0)
+	case "H": // Play a bunny card to hop to player 2's hand
+		bunnyhop(tableIndex, playerIndex, 1)
+	case "N": // Play a bunny card to hop to player 3's hand
+		bunnyhop(tableIndex, playerIndex, 2)
+	case "J": // Play a bunny card to hop to player 4's hand
+		bunnyhop(tableIndex, playerIndex, 3)
+	case "M": // Play a bunny card to hop to player 5's hand
+		bunnyhop(tableIndex, playerIndex, 4)
+	case "K": // Play a bunny card to hop to player 6's hand
+		bunnyhop(tableIndex, playerIndex, 5)
 
 	case "D": // Draw a card from the deck
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " drew a card from the deck"
-		addCardtohand(tableIndex, playerIndex) // Add a card to the player's hand
-	case "F": // Fold
-		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " folded"
-		gameStates[tableIndex].Players[playerIndex].Status = STATUS_FOLDED
-		gameStates[tableIndex].EndedLast = playerIndex
-	case "R": // Viewed the results of the round
-		gameStates[tableIndex].Players[playerIndex].Status = STATUS_ROUND_VIEWED
-		gameStates[tableIndex].Players[playerIndex].ValidMove = "G" // Set valid move to view game over results only
-		return
-	case "G": // Viewed the gameover screens
-		gameStates[tableIndex].Players[playerIndex].Status = STATUS_GAMEOVER_VIEWED
-		gameStates[tableIndex].Players[playerIndex].ValidMove = ""
-		return
-	}
+		updatelog(tableIndex)
+		addCardtohand(tableIndex, playerIndex) // Add a card to the player's hand then check if the drawn card is playable and update the last move played accordingly
 
-	// Update the player's  status
-	gameStates[tableIndex].Players[playerIndex].ValidMove = "" // Clear the valid moves after the player has made a move
-	if gameStates[tableIndex].Players[playerIndex].Status == STATUS_PLAYING {
-		gameStates[tableIndex].Players[playerIndex].Status = STATUS_WAITING // Set the current player's status to waiting if they didn't fold
-	}
+		// Check if any card in now hand matches or is 1 higher or 1 lower than discard pile
+		for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
 
-	// check if the round end conditions have been met and if not find the next player to play
-	if checkRoundEndCondtions(tableIndex) {
-		fmt.Println("Round ended for table", tables[tableIndex].Table)
-	} else {
-		// If there are still players playing, find the next player to play
-		nextPlayerIndex := playerIndex + 1
-		if nextPlayerIndex >= len(gameStates[tableIndex].Players) {
-			nextPlayerIndex = 0 // Wrap around to the first player if we reach the end
-		}
-		for i := 0; i < len(gameStates[tableIndex].Players); i++ {
-			if gameStates[tableIndex].Players[nextPlayerIndex].Status == STATUS_FOLDED {
-				// skip folded players
-			} else {
-				gameStates[tableIndex].Players[nextPlayerIndex].Status = STATUS_PLAYING // Set the next player to playing status
-				//gameStates[tableIndex].LastMovePlayed += gameStates[tableIndex].Players[nextPlayerIndex].Name + " to play next"
-				gameStates[tableIndex].Players[nextPlayerIndex].ValidMove = setValidmoves(tableIndex, nextPlayerIndex) // Set valid moves for the next player
+			if card.Cardvalue == prevValue {
+				drawmatch = true
 				break
 			}
-			nextPlayerIndex++
+			if card.Cardvalue == gameStates[tableIndex].Discard.Cardvalue {
+				drawmatch = true
+				break
+			}
+
+			if card.Cardvalue == nextValue {
+				drawmatch = true
+				break
+			}
+		}
+
+	case "F": // Fold
+		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " folded"
+		updatelog(tableIndex)
+		gameStates[tableIndex].Players[playerIndex].Status = STATUS_FOLDED
+		gameStates[tableIndex].EndedLast = playerIndex
+
+	case "0": // Play the Dog as wild card
+		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played the Dog card as a wild card and won the round !"
+		updatelog(tableIndex)
+		removeCardFromHand(tableIndex, playerIndex, Card{Cardvalue: 0, Cardname: "Dog"}) // Remove the dog card from the player's hand
+
+	case "R": // Viewed the results of the round
+		gameStates[tableIndex].Players[playerIndex].Status = STATUS_ROUND_VIEWED
+		if gameStates[tableIndex].RoundNumber >= 4 {
+			gameStates[tableIndex].Players[playerIndex].Status = STATUS_GAMEOVER_VIEWED
+		}
+		return
+	}
+
+	// Update the player's  status and get the next player if they didn't draw a card that they can play (if they drew a card that they can play then they can play it straight away with out changing the player turn)
+	if !drawmatch {
+
+		gameStates[tableIndex].Players[playerIndex].ValidMove = "" // Clear the valid moves after the player has made a move
+		if gameStates[tableIndex].Players[playerIndex].Status == STATUS_PLAYING {
+			gameStates[tableIndex].Players[playerIndex].Status = STATUS_WAITING // Set the current player's status to waiting if they didn't fold
+		}
+
+		// check if the round end conditions have been met and if not find the next player to play
+		if checkRoundEndCondtions(tableIndex) {
+			fmt.Println("Round ended for table", tables[tableIndex].Table)
+		} else {
+			// If there are still players playing, find the next player to play
+			nextPlayerIndex := playerIndex + 1
 			if nextPlayerIndex >= len(gameStates[tableIndex].Players) {
 				nextPlayerIndex = 0 // Wrap around to the first player if we reach the end
 			}
+			for i := 0; i < len(gameStates[tableIndex].Players); i++ {
+				if gameStates[tableIndex].Players[nextPlayerIndex].Status == STATUS_FOLDED {
+					// skip folded players
+				} else {
+					gameStates[tableIndex].Players[nextPlayerIndex].Status = STATUS_PLAYING // Set the next player to playing status
+					//gameStates[tableIndex].LastMovePlayed += gameStates[tableIndex].Players[nextPlayerIndex].Name + " to play next"
+					gameStates[tableIndex].Players[nextPlayerIndex].ValidMove = setValidmoves(tableIndex, nextPlayerIndex) // Set valid moves for the next player
+					break
+				}
+				nextPlayerIndex++
+				if nextPlayerIndex >= len(gameStates[tableIndex].Players) {
+					nextPlayerIndex = 0 // Wrap around to the first player if we reach the end
+				}
+			}
+		}
+	} else { // refresh the valid moves for the current player if they drew a card that they can play
+		gameStates[tableIndex].Players[playerIndex].ValidMove = ""
+		gameStates[tableIndex].Players[playerIndex].ValidMove = setValidmoves(tableIndex, playerIndex)
+	}
+}
+
+func bunnyhop(tableIndex int, playerIndex int, targetPlayerIndex int) {
+	catToken := false // Flag to track if any player has a cat token in their hand
+	for i := 0; i < len(gameStates[tableIndex].Players); i++ {
+		if gameStates[tableIndex].Players[i].HasCat {
+			catToken = true
+			break
 		}
 	}
+	if !checkfordog(tableIndex, targetPlayerIndex) { // Check if the bunny can be hopped to the target player's hand (IE they do not have a dog card in their hand which would prevent them from being hopped to)
+		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " gave a Bunny to " + gameStates[tableIndex].Players[targetPlayerIndex].Name
+		updatelog(tableIndex)
+		removeCardFromHand(tableIndex, playerIndex, Card{Cardvalue: 9, Cardname: "Bunny"})                                                                             // Remove the bunny card from the player's hand
+		gameStates[tableIndex].Players[targetPlayerIndex].Hand = append(gameStates[tableIndex].Players[targetPlayerIndex].Hand, Card{Cardvalue: 9, Cardname: "Bunny"}) // Add the bunny card to the target player's hand
+		gameStates[tableIndex].Players[targetPlayerIndex].NumCards++
+	} else {
+		gameStates[tableIndex].LastMovePlayed = "WOOF !!! WOOF !!!" + gameStates[tableIndex].Players[targetPlayerIndex].Name + " had a dog !"
+		updatelog(tableIndex)
+		// remove the dog card from the target player's hand give it to the player who tried to hop
+		removeCardFromHand(tableIndex, targetPlayerIndex, Card{Cardvalue: 0, Cardname: "Dog"})
+		gameStates[tableIndex].Players[playerIndex].Hand = append(gameStates[tableIndex].Players[playerIndex].Hand, Card{Cardvalue: 0, Cardname: "Dog"})
+		gameStates[tableIndex].Players[playerIndex].NumCards++
+		// remove any bunny cards from the target player's hand and give them to the player who tried to hop
+		for _, card := range gameStates[tableIndex].Players[targetPlayerIndex].Hand {
+			if card.Cardname == "Bunny" {
+				removeCardFromHand(tableIndex, targetPlayerIndex, Card{Cardvalue: 9, Cardname: "Bunny"})
+				gameStates[tableIndex].Players[playerIndex].Hand = append(gameStates[tableIndex].Players[playerIndex].Hand, card)
+				gameStates[tableIndex].Players[playerIndex].NumCards++
+			}
+		}
+	}
+	if !catToken {
+		gameStates[tableIndex].Players[playerIndex].HasCat = true // Add the cat marker from the player's hand to indicate they have used their bunny hop for the round and can not be hopped to again until the next round
+	}
+}
+
+// send information about the last move played to the console for debugging and testing purposes
+func updatelog(tableIndex int) {
+	fmt.Println("Table:", gameStates[tableIndex].Table.Table, " :", gameStates[tableIndex].LastMovePlayed)
 }
 
 func removeCardFromHand(tableIndex int, playerIndex int, card Card) {
@@ -786,12 +932,23 @@ func removeCardFromHand(tableIndex int, playerIndex int, card Card) {
 	}
 }
 
+func checkfordog(tableIndex int, playerIndex int) bool {
+	dogcheck := false
+	for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
+		if card.Cardvalue == 0 {
+			dogcheck = true
+			break
+		}
+	}
+	return dogcheck
+}
+
 func addCardtohand(tableIndex int, playerIndex int) {
 
-	gameStates[tableIndex].Players[playerIndex].Hand = append(gameStates[tableIndex].Players[playerIndex].Hand, gameStates[tableIndex].Maindeck[gameStates[tableIndex].NumCards]) // draw the last card from the deck
-	gameStates[tableIndex].NumCards--                                                                                                                                             // Decrement the number of cards in the deck
+	gameStates[tableIndex].Players[playerIndex].Hand = append(gameStates[tableIndex].Players[playerIndex].Hand, gameStates[tableIndex].Maindeck[gameStates[tableIndex].DeckPointer]) // draw the last card from the deck
+	gameStates[tableIndex].DeckPointer--                                                                                                                                             // Decrement the deck pointer
 	gameStates[tableIndex].Players[playerIndex].NumCards++
-	// sortCards(tableIndex, playerIndex)
+	SortHand(tableIndex, playerIndex)
 }
 
 // aiMove simulates an player's just dumb move by returning the first valid move from the AI player's valid moves.
@@ -833,34 +990,58 @@ func EndofRoundScore(tableIndex int) {
 	// Check if score has already been calculated for this round
 	if gameStates[tableIndex].RoundOver {
 		fmt.Println("Scores have already been calculated for this round, skipping score calculation")
-		gameStates[tableIndex].LastMovePlayed = "Please view the results"
+		if gameStates[tableIndex].RoundNumber < 4 {
+			gameStates[tableIndex].LastMovePlayed = "Here are the results of round " + strconv.Itoa(gameStates[tableIndex].RoundNumber)
+		} else {
+			gameStates[tableIndex].LastMovePlayed = "Here are the results of the final round "
+			gameStates[tableIndex].Gameover = true
+		}
 		SetEndofRoundStatus(tableIndex)
 		tables[tableIndex].Status = gameStates[tableIndex].Table.Status
 		return
 	}
 
 	fmt.Println("------------- End of round summary ------------------")
+
 	for i := 0; i < len(gameStates[tableIndex].Players); i++ {
-		{
-			SortHand(tableIndex, i)             // Sort the player's hand before calculating the score
-			RemoveDuplicateCards(tableIndex, i) // Remove any duplicate cards from the player's hand before calculating the score
 
-			// Calculate the score based on the cards remaining in the player's hand
-			for _, card := range gameStates[tableIndex].Players[i].Hand {
-				if card.Cardvalue > 0 && card.Cardvalue < 7 {
-
-				}
-				if card.Cardvalue == 7 {
-
-				}
-			}
-
+		SortHand(tableIndex, i) // Sort the player's hand before calculating the score
+		if gameStates[tableIndex].RoundNumber == 3 {
+			gameStates[tableIndex].Players[i].RoundScore = gameStates[tableIndex].Players[i].Score
+		} else {
+			gameStates[tableIndex].Players[i].RoundScore = 0 // Reset the player's round score before calculating it
 		}
-	}
 
-	gameStates[tableIndex].LastMovePlayed = "Please view the results"
-	gameStates[tableIndex].RoundOver = true // Set the round over flag to true to prevent multiple score calculations
+		// Calculate the score based on the cards remaining in the player's hand
+		for _, card := range gameStates[tableIndex].Players[i].Hand {
+			if card.Cardvalue > 0 && card.Cardvalue < 9 {
+				gameStates[tableIndex].Players[i].RoundScore += card.Cardvalue // Add the card value to the player's score for number cards
+			}
+			if card.Cardvalue == 9 {
+				gameStates[tableIndex].Players[i].RoundScore += 5 // Add 5 points for any bunny cards
+			}
+			if card.Cardvalue == 0 {
+				gameStates[tableIndex].Players[i].RoundScore += 10 // Add 10 points for the dog card
+			}
+		}
+		if gameStates[tableIndex].Players[i].HasCat {
+			gameStates[tableIndex].Players[i].RoundScore += 5 // Add 5 points for having the cat marker in hand at the end of the round
+		}
+
+		gameStates[tableIndex].Players[i].Score += gameStates[tableIndex].Players[i].RoundScore // Add the round score to the player's total score
+
+	}
+	if gameStates[tableIndex].RoundNumber < 4 {
+		gameStates[tableIndex].RoundNumber++
+		gameStates[tableIndex].LastMovePlayed = "Here are the results of round " + strconv.Itoa(gameStates[tableIndex].RoundNumber)
+	}
+	if gameStates[tableIndex].RoundNumber >= 4 {
+		gameStates[tableIndex].LastMovePlayed = "Here are the results of the final round "
+		gameStates[tableIndex].Gameover = true
+	}
 	gameStates[tableIndex].Table.Status = 4
+	gameStates[tableIndex].RoundOver = true // Set the round over flag to true to prevent multiple score calculations
+
 	SetEndofRoundStatus(tableIndex)
 	tables[tableIndex].Status = gameStates[tableIndex].Table.Status
 
@@ -868,23 +1049,12 @@ func EndofRoundScore(tableIndex int) {
 
 func SetEndofRoundStatus(tableIndex int) {
 	for i := 0; i < len(gameStates[tableIndex].Players); i++ {
-		gameStates[tableIndex].Players[i].ValidMove = "R" // Set valid moves to view results only
-		if Status(gameStates[tableIndex].Players[i].Score) >= 40 {
-			gameStates[tableIndex].Gameover = true
-		}
+		gameStates[tableIndex].Players[i].ValidMove = "R"  // Set valid moves to view results only
+		gameStates[tableIndex].Players[i].IsWinner = false // Reset the winner flag for all players before setting the new winner for the round
 	}
 	SortByRoundScore(tableIndex)
-	gameStates[tableIndex].Players[0].Status = STATUS_WON
+	gameStates[tableIndex].Players[0].IsWinner = true // Set the player with the lowest round score to be the winner of the round
 	setPlayorOrder(tableIndex)
-
-}
-
-func SetEndofGameStatus(tableIndex int) {
-	for i := 0; i < len(gameStates[tableIndex].Players); i++ {
-		gameStates[tableIndex].Players[i].ValidMove = "G" // Set valid moves to view results only
-	}
-	SortByFinalScore(tableIndex)
-	gameStates[tableIndex].Players[0].Status = STATUS_WON
 
 }
 
@@ -892,13 +1062,6 @@ func SortByRoundScore(tableIndex int) {
 
 	sort.SliceStable(gameStates[tableIndex].Players[:], func(i, j int) bool {
 		return gameStates[tableIndex].Players[i].RoundScore < gameStates[tableIndex].Players[j].RoundScore
-	})
-}
-
-func SortByFinalScore(tableIndex int) {
-
-	sort.SliceStable(gameStates[tableIndex].Players[:], func(i, j int) bool {
-		return gameStates[tableIndex].Players[i].Score < gameStates[tableIndex].Players[j].Score
 	})
 }
 
@@ -914,8 +1077,8 @@ func allViewedResults(tableIndex int) bool {
 	return allViewed
 }
 
-// Check if all human players have viewed Game Over Screen
-func allViewedGameOver(tableIndex int) bool {
+// Check if all human players have viewed the results of the final round
+func allViewedFinalResults(tableIndex int) bool {
 	allViewed := true
 	for _, player := range gameStates[tableIndex].Players {
 		if player.Status != STATUS_GAMEOVER_VIEWED && player.Human {
@@ -936,33 +1099,38 @@ func resetGame(tableIndex int) {
 	gameStates[tableIndex] = GameState{
 		Table:          tables[tableIndex],
 		Maindeck:       Deck{},
-		NumCards:       0,
+		DeckPointer:    72,
 		Discard:        Card{},
 		Players:        Players{},
 		LastMovePlayed: "Waiting for players to join",
 	}
-	setUpTable(tableIndex)  // Initialize each table with a new deck and shuffle it
+	setUpTable(tableIndex)  // Initialize the table with a new deck and shuffle it
 	updateLobby(tableIndex) // Update the lobby with the new table state
 }
 
 // Reset the game state for the next round
 func resetTable(tableIndex int) {
-	fmt.Println("------------- Resetting table  ------------------")
+	fmt.Println("------------- Resetting table for the next round ------------------")
 	shuffleDeck(gameStates[tableIndex].Maindeck, tableIndex)
-	gameStates[tableIndex].LastMovePlayed = "New Round, waiting for players to return to the table" // Reset the last move played message
-	gameStates[tableIndex].RoundOver = false                                                        // Reset the round over flag for the next
-	gameStates[tableIndex].startTime = time.Now()                                                   // Reset the waiting timer for the gamestate
-	setPlayorOrder(tableIndex)                                                                      // Set the play order for each player based on their index in the Players slice
+	gameStates[tableIndex].RoundOver = false      // Reset the round over flag for the next
+	gameStates[tableIndex].startTime = time.Now() // Reset the waiting timer for the gamestate
+	setPlayorOrder(tableIndex)                    // Set the play order for each player based on their index in the Players slice
 	// Reset the players' status and hands for the next round
+	startingplayer := 0
 	for i := 0; i < len(gameStates[tableIndex].Players); i++ {
 		gameStates[tableIndex].Players[i].Status = STATUS_WAITING // Set all players status to waiting for the next round
 		gameStates[tableIndex].Players[i].Hand = Deck{}           // Reset the player's hand for the next round
 		gameStates[tableIndex].Players[i].NumCards = 0            // Reset the number of cards in hand for the next round
 		gameStates[tableIndex].Players[i].ValidMove = ""          // Clear the valid moves for the next round
+		if gameStates[tableIndex].Players[i].IsWinner {
+			startingplayer = i
+		}
+		gameStates[tableIndex].Players[i].IsWinner = false // Reset the winner flag for the next round
 	}
-	dealCards(tableIndex)                                                                    // Deal cards to all players at the table for the next round
-	gameStates[tableIndex].Players[gameStates[tableIndex].EndedLast].Status = STATUS_PLAYING // Set the player who ended the last round to be the player that starts the next round
+	dealCards(tableIndex)                                                  // Deal cards to all players at the table for the next round                                // Increment the round number for the table
+	gameStates[tableIndex].Players[startingplayer].Status = STATUS_PLAYING // Set the player who ended the last round to be the player that starts the next round
 	gameStates[tableIndex].Table.Status = 3
+	gameStates[tableIndex].LastMovePlayed = "Round " + strconv.Itoa(gameStates[tableIndex].RoundNumber+1) + ", waiting for " + gameStates[tableIndex].Players[startingplayer].Name + " to make a move" // Reset the last move played message
 }
 
 // Set the play order for each player based on their index in the Players slice
@@ -982,29 +1150,19 @@ func makeHandSummary(tableIndex int, playerIndex int) string {
 	return strings.TrimSpace(summary)
 }
 
-// update game table info to the lobby fujinet lobby server
+// update game table info to the lobby fujinet lobby server (disabled for testing without lobby server)
 func updateLobby(tableIndex int) {
-	instanceUrlSuffix := "/?table=" + gameStates[tableIndex].Table.Table
-	sendStateToLobby(gameStates[tableIndex].Table.MaxPlayers, gameStates[tableIndex].Table.CurPlayers, true, gameStates[tableIndex].Table.Name, instanceUrlSuffix)
+	/*
 
-	fmt.Println("lobby updated for :", string(gameStates[tableIndex].Table.Name))
+		instanceUrlSuffix := "/?table=" + gameStates[tableIndex].Table.Table
+		sendStateToLobby(gameStates[tableIndex].Table.MaxPlayers, gameStates[tableIndex].Table.CurPlayers, true, gameStates[tableIndex].Table.Name, instanceUrlSuffix)
+
+		fmt.Println("lobby updated for :", string(gameStates[tableIndex].Table.Name))
+	*/
 }
 
 func SortHand(tableIndex int, playerIndex int) {
 	sort.SliceStable(gameStates[tableIndex].Players[playerIndex].Hand[:], func(i, j int) bool {
 		return gameStates[tableIndex].Players[playerIndex].Hand[i].Cardvalue < gameStates[tableIndex].Players[playerIndex].Hand[j].Cardvalue
 	})
-}
-
-func RemoveDuplicateCards(tableIndex int, playerIndex int) {
-	seen := make(map[int]bool)
-	uniqueHand := Deck{}
-
-	for _, card := range gameStates[tableIndex].Players[playerIndex].Hand {
-		if !seen[card.Cardvalue] {
-			seen[card.Cardvalue] = true
-			uniqueHand = append(uniqueHand, card)
-		}
-	}
-	gameStates[tableIndex].Players[playerIndex].Hand = uniqueHand
 }

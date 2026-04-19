@@ -6,12 +6,15 @@ state_message = "" ;
 draw_deck = "";
 discard_pile = "";
 table_status= "";
-cat_status="B"; // cat is in the basket 
+cat_status=7; // cat is in the basket 
 game_state_player_name = array_create(7);
 game_state_player_status = array_create(7);
 game_state_player_number_of_cards = array_create(7);
 game_state_player_hand_summary = array_create(7);
 game_state_player_valid_moves = array_create(7);
+game_state_player_has_cat = array_create(7);
+game_state_player_winner = array_create(7);
+game_state_player_score = array_create(7);
 display_player_card = array_create(70);
 
 // display_other_player_card = array_create(70);
@@ -25,7 +28,7 @@ sloty = 160;
 fetch_game_state=http_get(http_request_game_state_URL);
 
 
-alarm[0] = game_get_speed(gamespeed_fps) * 10;
+alarm[0] = game_get_speed(gamespeed_fps) * 1;
 var record_num = 0;
 repeat(7)
 {
@@ -39,3 +42,6 @@ record_num++;
 
 size = "default"
 number = 10
+
+timer=10; 
+turn_timer=60;
