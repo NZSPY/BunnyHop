@@ -4,9 +4,9 @@
 if (game_state_player_status[isPlayer]==4)
 {
 draw_set_halign(fa_left);
-draw_set_font(fUI_Bold);
+draw_set_font(fUI_Normal);
 draw_set_colour(c_black);
-draw_text(5, 890,"Waiting for other players to rejoin the table, for the next round");
+draw_text(2, 890,"Waiting for other players to rejoin the table, for the next round");
 }
 		
 // Draw each card on screen

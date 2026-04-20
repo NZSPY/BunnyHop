@@ -52,7 +52,7 @@ if (table_status == "2") // draw a start button
  if (table_status ==3 or table_status ==4  ) then event_user(0);
 
 // draw player names on screen 
-sloty=165;
+sloty=160;
 var record_num = 0;
 repeat(6)
 {

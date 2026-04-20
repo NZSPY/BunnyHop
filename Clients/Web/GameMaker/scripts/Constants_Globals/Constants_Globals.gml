@@ -1,6 +1,7 @@
 // Constants 
 
-#macro BASE_URL  "http://192.168.88.200:8080"
+//#macro BASE_URL  "http://192.168.88.200:8080"
+#macro BASE_URL  "https://bunnyhop.spysoft.nz"
 #macro TABLE_LIST_URL  BASE_URL+"/tables"
 #macro DISCARD_HOMEX 435
 #macro DISCARD_HOMEY 390

@@ -22,7 +22,6 @@ type GameState struct {
 	Players        Players
 	Maindeck       Deck
 	LastMovePlayed string // Last move made by the active player (e.g., "play", "fold", "draw")
-	EndedLast      int    // The index of the player who ended the last round
 	RoundOver      bool   // Indicates if the round is over
 	Gameover       bool   // Indicates if the game is over
 	startTime      time.Time
@@ -124,7 +123,6 @@ func main() {
 			Players:        Players{},
 			LastMovePlayed: "Waiting for players to join",
 			startTime:      time.Now(),
-			EndedLast:      -1,
 			RoundOver:      false,
 			Gameover:       false,
 			RoundNumber:    0}
@@ -824,7 +822,6 @@ func doVaildMove(tableIndex int, playerIndex int, move string) {
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " folded"
 		updatelog(tableIndex)
 		gameStates[tableIndex].Players[playerIndex].Status = STATUS_FOLDED
-		gameStates[tableIndex].EndedLast = playerIndex
 
 	case "0": // Play the Dog as wild card
 		gameStates[tableIndex].LastMovePlayed = gameStates[tableIndex].Players[playerIndex].Name + " played the Dog card as a wild card and won the round !"
@@ -924,8 +921,6 @@ func removeCardFromHand(tableIndex int, playerIndex int, card Card) {
 			gameStates[tableIndex].Players[playerIndex].NumCards--                                                                                                                     // Decrement the number of cards in hand
 			if gameStates[tableIndex].Players[playerIndex].NumCards <= 0 {
 				gameStates[tableIndex].Players[playerIndex].Status = STATUS_WON // If the player has no cards left, set their status to won
-				gameStates[tableIndex].EndedLast = playerIndex
-				fmt.Println(gameStates[tableIndex].Players[playerIndex].Name, "has won the round!")
 			}
 			return
 		}
@@ -1005,12 +1000,8 @@ func EndofRoundScore(tableIndex int) {
 
 	for i := 0; i < len(gameStates[tableIndex].Players); i++ {
 
-		SortHand(tableIndex, i) // Sort the player's hand before calculating the score
-		if gameStates[tableIndex].RoundNumber == 3 {
-			gameStates[tableIndex].Players[i].RoundScore = gameStates[tableIndex].Players[i].Score
-		} else {
-			gameStates[tableIndex].Players[i].RoundScore = 0 // Reset the player's round score before calculating it
-		}
+		SortHand(tableIndex, i)                          // Sort the player's hand before calculating the score
+		gameStates[tableIndex].Players[i].RoundScore = 0 // Reset the player's round score before calculating it
 
 		// Calculate the score based on the cards remaining in the player's hand
 		for _, card := range gameStates[tableIndex].Players[i].Hand {
@@ -1029,6 +1020,10 @@ func EndofRoundScore(tableIndex int) {
 		}
 
 		gameStates[tableIndex].Players[i].Score += gameStates[tableIndex].Players[i].RoundScore // Add the round score to the player's total score
+
+		if gameStates[tableIndex].RoundNumber >= 3 {
+			gameStates[tableIndex].Players[i].RoundScore = gameStates[tableIndex].Players[i].Score // Set the round score to the total score for the final round to show the final scores in the results
+		}
 
 	}
 	if gameStates[tableIndex].RoundNumber < 4 {
