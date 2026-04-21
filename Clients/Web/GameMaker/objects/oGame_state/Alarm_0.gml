@@ -1,5 +1,6 @@
 
 // get the lastest state from the server evey second unless it's the main players then only get every 10 seconds 
+if game_over then return;
 if (game_state_player_status[isPlayer]==0) then turn_timer=60;
 if (game_state_player_status[isPlayer]==1) 
 {

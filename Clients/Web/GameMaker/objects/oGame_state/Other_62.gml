@@ -1,8 +1,10 @@
+
 if (async_load[? "id"] == fetch_game_state)
 {
 if(ds_map_find_value(async_load,"status") == 0 )
 	{
 		var json =ds_map_find_value(async_load, "result");
+		if game_over then show_message(json);
 		var data = json_parse(json);
 		state_message = data.lmp;
 

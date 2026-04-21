@@ -45,3 +45,4 @@ number = 10
 
 timer=10; 
 turn_timer=60;
+game_over=false;

@@ -399,7 +399,7 @@ func getGameState(c *gin.Context) {
 	playerName := c.Query("player")
 
 	if !ok || playerName == "" {
-		c.JSON(http.StatusNotFound, "ERR(6) Must specify both table and player name")
+		c.JSON(http.StatusOK, "ERR(6) Must specify both table and player name")
 		return
 	}
 
@@ -412,7 +412,7 @@ func getGameState(c *gin.Context) {
 		}
 	}
 	if !playerFound {
-		c.JSON(http.StatusNotFound, "ERR(7) Player not found at this table")
+		c.JSON(http.StatusOK, "ERR(7) Player not found at this table")
 		return
 	}
 

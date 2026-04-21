@@ -165,12 +165,13 @@ if (game_state_player_status[isPlayer]==1)
 			{ 
 					if (point_in_rectangle(mouse_x, mouse_y,100,890,421,950) and string_contains(game_state_player_valid_moves[isPlayer],"R")) // clicked on the Continue button 
 				{
+					
 					var Do_Move = http_get(http_request_Do_Move_URL+"R");
-					fetch_game_state=http_get(http_request_game_state_URL);		
+					fetch_game_state=http_get(http_request_game_state_URL);	
+					if string_contains(state_message,"final")then game_restart();
 				}	
 					
 			}
-			
-			if game_state_player_status[isPlayer]==5 then game_restart();
+
 			
 			

@@ -1,4 +1,4 @@
-// draw all  player but the main human player 
+
 
 sloty=165;
 var record_num = 0;
