@@ -28,11 +28,16 @@ It includes:
  ### Files for 3D printing if you want to make a "delux version" ### 
 
  I printed all of the 3 items below in PLA on Creality K1 Max no supports required. 
+
  `Bunny Hop Basket.stl` 
  Orginal file source: Rectangular wicker basket by eleode on Thingiverse: https://www.thingiverse.com/thing:4383417
+ 
  Size modifed and smooth insert added by me
+ 
  `Bunny Hop Lid.stl` 
  The lid for the basket file created by me, make sure you print this with the rabbit flat to the print plate
+ 
  `cat.stl` 
  Orginal file source: Wooden cat by pmoews on Thingiverse: https://www.thingiverse.com/thing:3050876
+ 
  May Will need to resize the cat to suit 
