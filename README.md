@@ -2,23 +2,8 @@
 
 Welcome to the Young family garden, where bunnies hop around looking for delicious food to eat. But beware of the dog, eager to chase them away.
 
-## Contents
-- 1 Harvest Basket
-- 1 Cat
-- 73 playing cards, including:
-  - 8 of each type of vegetable (1-8)
-  - 8 bunnies
-  - 1 dog
-
 ## Aim of the Game
 To get rid of your cards each round and be the player with the least points at the end of the game.
-
-## Setup
-1. Remove all of the game pieces from the basket and replace the lid upside down to form the Harvest Basket for playing.
-2. Place the Harvest Basket in the centre of the garden (table or playing area).
-3. Place the cat on top of the basket.
-4. Shuffle all of the cards and deal 7 to each player.
-5. Place the remaining cards upside down in a pile beside the Harvest Basket.
 
 ## How to Play
 Gardeners (players) take turns at placing their ripe vegetables or animals onto the Harvest Basket.
