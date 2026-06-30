@@ -1,7 +1,7 @@
 .DS_Store
 /.vscode/*
 /localtest/*
-/Client/Atari FastBasic/bin/*
+/Clients/Atari FastBasic/bin/*
 /Client/Atari FastBasic/bin/*.asm
 Client/Atari/bin/*.o 
 Client/Atari/bin/debug.*
