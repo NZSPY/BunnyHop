@@ -426,7 +426,7 @@ PROC TitleScreen
   X=13
   @POS X,1: @Print &"      q"
   @POS X,2: @Print &"     qpq"
-  @POS X,3: @Print &"FUJIrpqpq NET"
+  @POS X,3: @Print &"FUJIrpqpqNET"
   @POS X,4: @Print &"     rqpq"
   @POS X,5: @Print &"      rqq"
   @POS X+3,7:@Print &"PRESENTS"
